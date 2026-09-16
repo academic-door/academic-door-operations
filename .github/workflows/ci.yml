@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate seed snapshot
+        run: python scripts/validate_snapshot.py data/seed-snapshot.json
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Render report
+        run: python scripts/render_report.py data/seed-snapshot.json /tmp/latest.md
+      - name: Verify report is non-empty
+        run: test -s /tmp/latest.md
