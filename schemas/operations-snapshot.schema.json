@@ -28,6 +28,11 @@
         "evidence_class": {"$ref": "#/$defs/evidence"},
         "amount": {"type": ["number", "null"]},
         "currency": {"type": ["string", "null"]},
+        "gross_amount": {"type": ["number", "null"]},
+        "discount_amount": {"type": ["number", "null"]},
+        "usage_quantity": {"type": ["number", "null"]},
+        "usage_unit": {"type": ["string", "null"]},
+        "usage_summary": {"type": ["string", "null"]},
         "status": {"type": "string"},
         "source": {"type": ["string", "null"]},
         "note": {"type": ["string", "null"]}
