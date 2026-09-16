@@ -36,8 +36,11 @@ jobs:
         env:
           GITHUB_READ_TOKEN: ${{ steps.app-token.outputs.token }}
 
+      - name: Collect bounded public owner telemetry
+        run: python -m scripts.collect_owner_telemetry --output data/owner-latest.json
+
       - name: Build normalized Operations snapshot
-        run: python scripts/build_snapshot.py --seed data/seed-snapshot.json --github data/github-latest.json --output data/latest.json
+        run: python scripts/build_snapshot.py --seed data/seed-snapshot.json --github data/github-latest.json --owner data/owner-latest.json --output data/latest.json
 
       - name: Validate normalized snapshot
         run: python scripts/validate_snapshot.py data/latest.json
@@ -53,5 +56,6 @@ jobs:
           retention-days: 30
           path: |
             data/github-latest.json
+            data/owner-latest.json
             data/latest.json
             reports/latest.md
