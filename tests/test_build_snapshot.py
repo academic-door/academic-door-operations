@@ -109,6 +109,27 @@ class BuildSnapshotTests(unittest.TestCase):
         serialized = json.dumps(snapshot)
         self.assertNotIn("must-not-survive", serialized)
 
+    def test_deferred_future_access_note_is_not_reported_as_current_human_action(self):
+        snapshot = build_snapshot(self.seed, self.github)
+        self.assertEqual(snapshot["human_actions"], [])
+
+    def test_billing_gap_becomes_exact_current_human_action(self):
+        self.github["billing"] = {
+            "evidence_class": "UNKNOWN",
+            "net_amount": None,
+            "gross_amount": None,
+            "net_quantity": None,
+            "unit_type": None,
+            "items": [],
+            "reason": "403",
+        }
+        self.github["gaps"] = [
+            {"area": "github-billing", "status": 403, "message": "forbidden", "repository": None}
+        ]
+        snapshot = build_snapshot(self.seed, self.github)
+        self.assertEqual(len(snapshot["human_actions"]), 1)
+        self.assertIn("Administration:read", snapshot["human_actions"][0])
+
 
 if __name__ == "__main__":
     unittest.main()
