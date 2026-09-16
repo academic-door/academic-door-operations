@@ -21,47 +21,80 @@
       "type": "object",
       "required": ["id", "service", "owner", "evidence_class", "status"],
       "properties": {
-        "id": {"type": "string"}, "service": {"type": "string"}, "owner": {"type": "string"},
-        "consumer": {"type": "string"}, "evidence_class": {"$ref": "#/$defs/evidence"},
-        "amount": {"type": ["number", "null"]}, "currency": {"type": ["string", "null"]},
-        "status": {"type": "string"}, "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+        "id": {"type": "string"},
+        "service": {"type": "string"},
+        "owner": {"type": "string"},
+        "consumer": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"},
+        "amount": {"type": ["number", "null"]},
+        "currency": {"type": ["string", "null"]},
+        "status": {"type": "string"},
+        "source": {"type": ["string", "null"]},
+        "note": {"type": ["string", "null"]}
       }
     },
     "quota": {
       "type": "object",
       "required": ["id", "provider", "owner", "evidence_class", "status"],
       "properties": {
-        "id": {"type": "string"}, "provider": {"type": "string"}, "owner": {"type": "string"},
-        "evidence_class": {"$ref": "#/$defs/evidence"}, "limit": {"type": ["number", "null"]},
-        "remaining": {"type": ["number", "null"]}, "status": {"enum": ["HEALTHY", "WATCH", "PRESSURED", "EXHAUSTED", "UNKNOWN"]},
-        "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+        "id": {"type": "string"},
+        "provider": {"type": "string"},
+        "owner": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"},
+        "limit": {"type": ["number", "null"]},
+        "remaining": {"type": ["number", "null"]},
+        "status": {"enum": ["HEALTHY", "WATCH", "PRESSURED", "EXHAUSTED", "UNKNOWN"]},
+        "source": {"type": ["string", "null"]},
+        "note": {"type": ["string", "null"]}
       }
     },
     "credential": {
       "type": "object",
       "required": ["logical_name", "provider", "owner", "consumers", "secret_value_policy", "status"],
       "properties": {
-        "logical_name": {"type": "string"}, "provider": {"type": "string"}, "owner": {"type": "string"},
+        "logical_name": {"type": "string"},
+        "provider": {"type": "string"},
+        "owner": {"type": "string"},
         "consumers": {"type": "array", "items": {"type": "string"}},
-        "secret_value_policy": {"const": "NEVER_COLLECT"}, "status": {"type": "string"},
-        "last_legitimate_use_source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+        "secret_value_policy": {"const": "NEVER_COLLECT"},
+        "status": {"type": "string"},
+        "last_legitimate_use_source": {"type": ["string", "null"]},
+        "created_at": {"type": ["string", "null"]},
+        "updated_at": {"type": ["string", "null"]},
+        "storage_scope": {"type": ["string", "null"]},
+        "visibility": {"type": ["string", "null"]},
+        "note": {"type": ["string", "null"]}
       }
     },
     "service": {
       "type": "object",
       "required": ["id", "category", "owner", "evidence_class", "status"],
       "properties": {
-        "id": {"type": "string"}, "category": {"type": "string"}, "owner": {"type": "string"},
-        "evidence_class": {"$ref": "#/$defs/evidence"}, "status": {"type": "string"}, "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+        "id": {"type": "string"},
+        "category": {"type": "string"},
+        "owner": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"},
+        "status": {"type": "string"},
+        "source": {"type": ["string", "null"]},
+        "note": {"type": ["string", "null"]}
       }
     },
     "action": {
       "type": "object",
       "required": ["repository", "workflow_class", "evidence_class", "status"],
       "properties": {
-        "repository": {"type": "string"}, "workflow_class": {"type": "string"},
-        "evidence_class": {"$ref": "#/$defs/evidence"}, "status": {"type": "string"},
-        "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+        "repository": {"type": "string"},
+        "workflow_class": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"},
+        "status": {"type": "string"},
+        "source": {"type": ["string", "null"]},
+        "note": {"type": ["string", "null"]},
+        "run_count": {"type": ["integer", "null"]},
+        "estimated_minutes": {"type": ["number", "null"]},
+        "window_days": {"type": ["integer", "null"]},
+        "success_count": {"type": ["integer", "null"]},
+        "failure_count": {"type": ["integer", "null"]},
+        "cancelled_count": {"type": ["integer", "null"]}
       }
     }
   }
