@@ -31,13 +31,50 @@ Current numbered Brains/repositories are only the present inventory. They do not
 
 ## Phase 0
 
-Tracked by #1. The initial deliverable is a normalized snapshot + deterministic private report that answers:
+Tracked by #1 and accepted on main. `data/seed-snapshot.json` is the bounded initial inventory baseline. `scripts/render_report.py` renders a human-readable private report.
 
-1. What does Academic Door cost now, and what is the projected period-end cost?
-2. Where is that usage/cost coming from?
-3. Which quotas/resources are pressured?
-4. Which logical credentials exist and where are they used (metadata only)?
-5. Which recurring workloads/services look inefficient or risky?
-6. What requires Human Principal action now?
+## Phase 1 — automated read-only ingestion
 
-`data/seed-snapshot.json` is the first bounded inventory baseline. `scripts/render_report.py` renders a human-readable report. Account-level actual billing remains `UNKNOWN` until safe read-only provider access exists.
+Tracked by #3. The first automated slice is GitHub-wide observation:
+
+- discover repositories from the Academic Door GitHub App installation rather than hard-coding today's product list;
+- summarize recent Actions workflow activity as `ESTIMATED` operational evidence;
+- read organization billing usage as `ACTUAL` only when GitHub exposes it through the authorized billing endpoint;
+- inventory GitHub Actions secret **metadata only** (logical names, timestamps, visibility/scope), never secret values;
+- merge the observed evidence into `data/latest.json` and render `reports/latest.md`.
+
+The manual probe workflow is `.github/workflows/operations-probe.yml`. It intentionally has **no schedule** until the read-only App is configured and a manual probe is accepted.
+
+### Academic Door Operations GitHub App — minimum permission contract
+
+Install the App only on the `academic-door` organization and select **All repositories** so future Academic Door repositories enter scope automatically.
+
+Repository permissions:
+
+- **Metadata: Read** (baseline GitHub App repository metadata access)
+- **Actions: Read**
+- **Secrets: Read** — metadata only; GitHub's list/get secret endpoints do not reveal encrypted values
+
+Organization permissions:
+
+- **Administration: Read** — required for organization billing usage endpoints
+- **Secrets: Read** — organization Actions secret metadata only
+
+No repository or organization write permission belongs in this App. `Contents: Read` is also intentionally not requested yet because this GitHub slice does not read repository files; if a later owner-telemetry adapter needs it, that permission must be added through a separate reviewed change.
+
+The workflow expects:
+
+- repository variable `OPS_APP_CLIENT_ID`;
+- repository secret `OPS_APP_PRIVATE_KEY`.
+
+`actions/create-github-app-token@v3` uses those to mint a short-lived installation token. Cross-repository reads use that token; report generation itself does not grant the App any write path.
+
+### Activation gate
+
+1. Merge the collector/probe implementation with CI green.
+2. Human Principal creates and installs the App with exactly the permissions above, then configures `OPS_APP_CLIENT_ID` and `OPS_APP_PRIVATE_KEY` in this private repository.
+3. Run `Operations read-only probe` manually.
+4. Verify the bounded artifacts and permission gaps.
+5. Only then consider enabling a daily schedule and bounded report history.
+
+Until step 3 succeeds, account-level actual billing remains `UNKNOWN`; it must never be inferred as zero.
