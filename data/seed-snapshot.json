@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-16T14:50:00Z",
+  "scope": "ACADEMIC_DOOR_WIDE_TOPOLOGY_DYNAMIC",
+  "costs": [
+    {
+      "id": "github-actions",
+      "service": "GitHub Actions",
+      "owner": "parent-shared-cost-guardrail",
+      "consumer": "Academic Door-wide",
+      "evidence_class": "UNKNOWN",
+      "amount": null,
+      "currency": null,
+      "status": "account billing actual unavailable through current connector",
+      "source": "academic-door/academic-door-main-control#54",
+      "note": "Repository/workflow evidence can support estimates; organization actual spend requires account-level billing read access."
+    },
+    {
+      "id": "cloudflare",
+      "service": "Cloudflare runtime/scheduling",
+      "owner": "mixed-product-runtime",
+      "consumer": "current known consumers include Working Papers and Composer",
+      "evidence_class": "UNKNOWN",
+      "amount": null,
+      "currency": null,
+      "status": "account billing not yet inventoried",
+      "source": "academic-door/academic-door-main-control#65",
+      "note": "Do not infer paid spend from runtime configuration alone."
+    },
+    {
+      "id": "ai-translation-enrichment",
+      "service": "AI / translation / enrichment providers",
+      "owner": "product-local-with-parent-cost-escalation",
+      "consumer": "Academic Door-wide as applicable",
+      "evidence_class": "UNKNOWN",
+      "amount": null,
+      "currency": null,
+      "status": "provider/account inventory incomplete",
+      "source": "academic-door/academic-door-main-control#65",
+      "note": "Future providers enter automatically when they create Academic Door cost/resource exposure."
+    },
+    {
+      "id": "email-domain",
+      "service": "Email / domains / related recurring services",
+      "owner": "parent-shared-or-product-specific",
+      "consumer": "Academic Door-wide as applicable",
+      "evidence_class": "UNKNOWN",
+      "amount": null,
+      "currency": null,
+      "status": "account inventory incomplete",
+      "source": "academic-door/academic-door-main-control#65",
+      "note": null
+    }
+  ],
+  "quotas": [
+    {
+      "id": "semantic-scholar-academic-graph",
+      "provider": "Semantic Scholar",
+      "owner": "daily-door",
+      "evidence_class": "PROVIDER_REPORTED",
+      "limit": null,
+      "remaining": null,
+      "status": "PRESSURED",
+      "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": "Latest owner telemetry at 2026-09-16T10:46:20Z: keyed control target 0.2 RPS, circuit open, 4 rate-limited and 129 skipped in the 150-candidate run. Provider account quota is not exposed."
+    },
+    {
+      "id": "elsevier-metadata",
+      "provider": "Elsevier",
+      "owner": "shared-policy-product-local-use",
+      "evidence_class": "PROVIDER_REPORTED",
+      "limit": null,
+      "remaining": null,
+      "status": "HEALTHY",
+      "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": "Latest owner metadata-recovery telemetry at 2026-09-16T10:46:20Z: 150 attempts, 36 available, 114 empty, 0 rate-limited, key and institutional token configured. Account-level quota is intentionally not invented."
+    },
+    {
+      "id": "crossref",
+      "provider": "Crossref",
+      "owner": "product-local-public-provider-use",
+      "evidence_class": "PROVIDER_REPORTED",
+      "limit": null,
+      "remaining": null,
+      "status": "HEALTHY",
+      "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": "Latest owner telemetry: 150 attempts, 0 failed, 0 rate-limited."
+    },
+    {
+      "id": "openalex",
+      "provider": "OpenAlex",
+      "owner": "product-local-public-provider-use",
+      "evidence_class": "PROVIDER_REPORTED",
+      "limit": null,
+      "remaining": null,
+      "status": "HEALTHY",
+      "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": "Latest owner telemetry: 150 attempts, 0 failed, 0 rate-limited."
+    }
+  ],
+  "credentials": [
+    {
+      "logical_name": "SEMANTIC_SCHOLAR_API_KEY",
+      "provider": "Semantic Scholar",
+      "owner": "daily-door",
+      "consumers": ["academic-door/econ-paper-monitor"],
+      "secret_value_policy": "NEVER_COLLECT",
+      "status": "configured; legitimate use observed; provider pressure present",
+      "last_legitimate_use_source": "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json",
+      "note": "Synthetic keep-alive reconciliation is tracked in econ-paper-monitor#208."
+    },
+    {
+      "logical_name": "ELSEVIER_API_KEY",
+      "provider": "Elsevier",
+      "owner": "shared-policy-product-local-use",
+      "consumers": ["academic-door/econ-paper-monitor", "academic-door/journals"],
+      "secret_value_policy": "NEVER_COLLECT",
+      "status": "configured signal observed in Daily telemetry",
+      "last_legitimate_use_source": "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json",
+      "note": "Daily and Journals uses remain governed by SHARED_SCHOLARLY_API_POLICY.md."
+    },
+    {
+      "logical_name": "ELSEVIER_INST_TOKEN",
+      "provider": "Elsevier",
+      "owner": "shared-policy-product-local-use",
+      "consumers": ["academic-door/econ-paper-monitor", "academic-door/journals"],
+      "secret_value_policy": "NEVER_COLLECT",
+      "status": "configured signal observed in Daily telemetry",
+      "last_legitimate_use_source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": null
+    },
+    {
+      "logical_name": "JINA_API_KEY",
+      "provider": "Jina",
+      "owner": "product-local-shared-capability-candidate",
+      "consumers": ["academic-door/econ-paper-monitor", "academic-door/journals"],
+      "secret_value_policy": "NEVER_COLLECT",
+      "status": "workflow references known; account entitlement/cost unknown",
+      "last_legitimate_use_source": null,
+      "note": "Do not infer plan, balance, or billing from workflow references alone."
+    }
+  ],
+  "services": [
+    {
+      "id": "github-organization",
+      "category": "source-control-ci-hosting",
+      "owner": "parent-shared",
+      "evidence_class": "UNKNOWN",
+      "status": "operational; account cost actual unavailable",
+      "source": "academic-door/academic-door-main-control#54",
+      "note": null
+    },
+    {
+      "id": "cloudflare-current",
+      "category": "runtime-external-scheduling",
+      "owner": "mixed-product-runtime",
+      "evidence_class": "UNKNOWN",
+      "status": "known configured surfaces; billing/usage account evidence pending",
+      "source": "academic-door/academic-door-main-control#65",
+      "note": null
+    },
+    {
+      "id": "project-mailbox",
+      "category": "email-infrastructure",
+      "owner": "parent-shared-or-product-specific",
+      "evidence_class": "UNKNOWN",
+      "status": "known project mailbox; recurring cost/plan not yet inventoried",
+      "source": "academic-door/academic-door-main-control#63",
+      "note": null
+    }
+  ],
+  "actions": [
+    {
+      "repository": "academic-door/econ-paper-monitor",
+      "workflow_class": "high-frequency discovery / watchdog / update",
+      "evidence_class": "ESTIMATED",
+      "status": "primary Actions cost-attention surface",
+      "source": "academic-door/academic-door-main-control#54",
+      "note": "Preserve freshness/reliability contracts while reducing redundant/no-op executions."
+    },
+    {
+      "repository": "academic-door/nber-working-papers-pipeline",
+      "workflow_class": "release detector / publication / health",
+      "evidence_class": "ESTIMATED",
+      "status": "post-acceptance quiescence optimization already accepted; continue bounded efficiency audit",
+      "source": "academic-door/nber-working-papers-pipeline#70",
+      "note": null
+    },
+    {
+      "repository": "academic-door/journals",
+      "workflow_class": "monitor / history / deploy / health",
+      "evidence_class": "ESTIMATED",
+      "status": "bounded scheduled production and health surfaces",
+      "source": "academic-door/academic-door-main-control#54",
+      "note": null
+    },
+    {
+      "repository": "academic-door/longform-editorial",
+      "workflow_class": "CI",
+      "evidence_class": "ESTIMATED",
+      "status": "currently light",
+      "source": "academic-door/academic-door-main-control#54",
+      "note": null
+    },
+    {
+      "repository": "academic-door/academic-door-composer",
+      "workflow_class": "deploy / test / scheduled check-in",
+      "evidence_class": "ESTIMATED",
+      "status": "currently light; scheduled check-in dependency/value requires reconciliation",
+      "source": "academic-door/academic-door-main-control#54",
+      "note": null
+    }
+  ],
+  "human_actions": [
+    "Account-level read access will eventually be required to convert GitHub Actions, Cloudflare, AI/provider and other billed services from UNKNOWN/ESTIMATED to ACTUAL; do not request secret values."
+  ]
+}

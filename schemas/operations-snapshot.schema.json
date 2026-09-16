@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://academic-door/operations-snapshot.schema.json",
+  "title": "Academic Door Operations Snapshot",
+  "type": "object",
+  "required": ["schema_version", "observed_at", "scope", "costs", "quotas", "credentials", "services", "actions", "human_actions"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "observed_at": {"type": "string"},
+    "scope": {"const": "ACADEMIC_DOOR_WIDE_TOPOLOGY_DYNAMIC"},
+    "costs": {"type": "array", "items": {"$ref": "#/$defs/cost"}},
+    "quotas": {"type": "array", "items": {"$ref": "#/$defs/quota"}},
+    "credentials": {"type": "array", "items": {"$ref": "#/$defs/credential"}},
+    "services": {"type": "array", "items": {"$ref": "#/$defs/service"}},
+    "actions": {"type": "array", "items": {"$ref": "#/$defs/action"}},
+    "human_actions": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "evidence": {"enum": ["ACTUAL", "PROVIDER_REPORTED", "ESTIMATED", "UNKNOWN"]},
+    "cost": {
+      "type": "object",
+      "required": ["id", "service", "owner", "evidence_class", "status"],
+      "properties": {
+        "id": {"type": "string"}, "service": {"type": "string"}, "owner": {"type": "string"},
+        "consumer": {"type": "string"}, "evidence_class": {"$ref": "#/$defs/evidence"},
+        "amount": {"type": ["number", "null"]}, "currency": {"type": ["string", "null"]},
+        "status": {"type": "string"}, "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+      }
+    },
+    "quota": {
+      "type": "object",
+      "required": ["id", "provider", "owner", "evidence_class", "status"],
+      "properties": {
+        "id": {"type": "string"}, "provider": {"type": "string"}, "owner": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"}, "limit": {"type": ["number", "null"]},
+        "remaining": {"type": ["number", "null"]}, "status": {"enum": ["HEALTHY", "WATCH", "PRESSURED", "EXHAUSTED", "UNKNOWN"]},
+        "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+      }
+    },
+    "credential": {
+      "type": "object",
+      "required": ["logical_name", "provider", "owner", "consumers", "secret_value_policy", "status"],
+      "properties": {
+        "logical_name": {"type": "string"}, "provider": {"type": "string"}, "owner": {"type": "string"},
+        "consumers": {"type": "array", "items": {"type": "string"}},
+        "secret_value_policy": {"const": "NEVER_COLLECT"}, "status": {"type": "string"},
+        "last_legitimate_use_source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+      }
+    },
+    "service": {
+      "type": "object",
+      "required": ["id", "category", "owner", "evidence_class", "status"],
+      "properties": {
+        "id": {"type": "string"}, "category": {"type": "string"}, "owner": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"}, "status": {"type": "string"}, "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": ["repository", "workflow_class", "evidence_class", "status"],
+      "properties": {
+        "repository": {"type": "string"}, "workflow_class": {"type": "string"},
+        "evidence_class": {"$ref": "#/$defs/evidence"}, "status": {"type": "string"},
+        "source": {"type": ["string", "null"]}, "note": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
