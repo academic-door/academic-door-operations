@@ -43,6 +43,7 @@ class BuildSnapshotTests(unittest.TestCase):
                 "evidence_class": "ACTUAL",
                 "net_amount": 1.25,
                 "gross_amount": 1.5,
+                "discount_amount": 0.25,
                 "net_quantity": 150,
                 "unit_type": "minutes",
                 "items": [],
@@ -69,6 +70,10 @@ class BuildSnapshotTests(unittest.TestCase):
         cost = next(item for item in snapshot["costs"] if item["id"] == "github-actions")
         self.assertEqual(cost["evidence_class"], "ACTUAL")
         self.assertEqual(cost["amount"], 1.25)
+        self.assertEqual(cost["gross_amount"], 1.5)
+        self.assertEqual(cost["discount_amount"], 0.25)
+        self.assertEqual(cost["usage_quantity"], 150)
+        self.assertEqual(cost["usage_unit"], "minutes")
 
         self.assertEqual(len(snapshot["actions"]), 1)
         action = snapshot["actions"][0]
@@ -82,6 +87,7 @@ class BuildSnapshotTests(unittest.TestCase):
             "evidence_class": "UNKNOWN",
             "net_amount": None,
             "gross_amount": None,
+            "discount_amount": None,
             "net_quantity": None,
             "unit_type": None,
             "items": [],
@@ -91,6 +97,8 @@ class BuildSnapshotTests(unittest.TestCase):
         cost = next(item for item in snapshot["costs"] if item["id"] == "github-actions")
         self.assertEqual(cost["evidence_class"], "UNKNOWN")
         self.assertIsNone(cost["amount"])
+        self.assertIsNone(cost["gross_amount"])
+        self.assertIsNone(cost["discount_amount"])
 
     def test_credential_metadata_is_whitelisted_and_secret_values_never_survive(self):
         snapshot = build_snapshot(self.seed, self.github)
@@ -118,6 +126,7 @@ class BuildSnapshotTests(unittest.TestCase):
             "evidence_class": "UNKNOWN",
             "net_amount": None,
             "gross_amount": None,
+            "discount_amount": None,
             "net_quantity": None,
             "unit_type": None,
             "items": [],

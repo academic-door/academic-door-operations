@@ -12,6 +12,18 @@ from pathlib import Path
 LEGACY_DEFERRED_ACTION_PREFIX = "Account-level read access will eventually be required"
 
 
+def _billing_usage_summary(items: list[dict]) -> str | None:
+    parts = []
+    for item in items:
+        sku = item.get("sku") or "unknown-sku"
+        unit = item.get("unitType") or "units"
+        gross = item.get("grossQuantity")
+        discount = item.get("discountQuantity")
+        net = item.get("netQuantity")
+        parts.append(f"{sku}: gross={gross} {unit}, discount={discount} {unit}, net={net} {unit}")
+    return "; ".join(parts) if parts else None
+
+
 def _merge_costs(seed_costs: list[dict], billing: dict) -> list[dict]:
     costs = copy.deepcopy(seed_costs)
     github = next((item for item in costs if item.get("id") == "github-actions"), None)
@@ -27,17 +39,28 @@ def _merge_costs(seed_costs: list[dict], billing: dict) -> list[dict]:
     github["evidence_class"] = billing.get("evidence_class", "UNKNOWN")
     github["amount"] = billing.get("net_amount")
     github["currency"] = None
-    github["status"] = (
-        "authoritative organization billing usage observed"
-        if github["evidence_class"] == "ACTUAL"
-        else billing.get("reason") or "organization billing usage unavailable"
-    )
+    github["gross_amount"] = billing.get("gross_amount")
+    github["discount_amount"] = billing.get("discount_amount")
+    github["usage_quantity"] = billing.get("net_quantity")
+    github["usage_unit"] = billing.get("unit_type")
+    github["usage_summary"] = _billing_usage_summary(billing.get("items", []))
+
+    if github["evidence_class"] == "ACTUAL":
+        if (github.get("amount") or 0) == 0 and (github.get("gross_amount") or 0) > 0:
+            github["status"] = "current-month billable net is zero; observed usage is covered by included usage/discounts"
+        else:
+            github["status"] = "authoritative current-month organization billing usage observed"
+    else:
+        github["status"] = billing.get("reason") or "organization billing usage unavailable"
+
     github["source"] = "GitHub organization billing usage summary API"
-    github["note"] = (
-        f"net usage quantity={billing.get('net_quantity')} {billing.get('unit_type') or ''}".strip()
-        if github["evidence_class"] == "ACTUAL"
-        else "UNKNOWN is preserved; no zero-cost inference is allowed."
-    )
+    if github["evidence_class"] == "ACTUAL":
+        github["note"] = (
+            f"gross_amount={github.get('gross_amount')}; discount_amount={github.get('discount_amount')}; "
+            f"net_amount={github.get('amount')}; usage={github.get('usage_summary') or 'mixed/unspecified units'}"
+        )
+    else:
+        github["note"] = "UNKNOWN is preserved; no zero-cost inference is allowed."
     return costs
 
 

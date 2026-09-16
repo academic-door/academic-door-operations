@@ -14,6 +14,25 @@ def table(headers, rows):
     return "\n".join(out)
 
 
+def _cost_value(item, field):
+    raw = item.get(field)
+    if raw is None:
+        return "UNKNOWN"
+    currency = item.get("currency")
+    return f"{raw} {currency}" if currency else str(raw)
+
+
+def _usage_value(item):
+    summary = item.get("usage_summary")
+    if summary:
+        return summary
+    quantity = item.get("usage_quantity")
+    unit = item.get("usage_unit")
+    if quantity is None:
+        return "UNKNOWN"
+    return f"{quantity} {unit or ''}".strip()
+
+
 def render(snapshot):
     lines = [
         "# Academic Door Operations — latest snapshot",
@@ -24,8 +43,20 @@ def render(snapshot):
         "## Cost / usage",
         "",
         table(
-            ["Service", "Owner", "Evidence", "Amount", "Status"],
-            [[x["service"], x["owner"], x["evidence_class"], f"{value(x.get('amount'))} {value(x.get('currency')) if x.get('amount') is not None else ''}".strip(), x["status"]] for x in snapshot["costs"]],
+            ["Service", "Owner", "Evidence", "Net billable", "Gross", "Discount", "Usage", "Status"],
+            [
+                [
+                    x["service"],
+                    x["owner"],
+                    x["evidence_class"],
+                    _cost_value(x, "amount"),
+                    _cost_value(x, "gross_amount"),
+                    _cost_value(x, "discount_amount"),
+                    _usage_value(x),
+                    x["status"],
+                ]
+                for x in snapshot["costs"]
+            ],
         ),
         "",
         "## Quota / provider pressure",

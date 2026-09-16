@@ -61,6 +61,7 @@ def _billing(api: GitHubApi, org: str, observed: datetime, gaps: list[dict]) -> 
             "evidence_class": "UNKNOWN",
             "net_amount": None,
             "gross_amount": None,
+            "discount_amount": None,
             "net_quantity": None,
             "unit_type": None,
             "items": [],
@@ -70,13 +71,15 @@ def _billing(api: GitHubApi, org: str, observed: datetime, gaps: list[dict]) -> 
     items = [item for item in payload.get("usageItems", []) if str(item.get("product", "")).lower() == "actions"]
     net_amount = round(sum(float(item.get("netAmount") or 0) for item in items), 6)
     gross_amount = round(sum(float(item.get("grossAmount") or 0) for item in items), 6)
+    discount_amount = round(sum(float(item.get("discountAmount") or 0) for item in items), 6)
     net_quantity = sum(float(item.get("netQuantity") or item.get("quantity") or 0) for item in items)
     unit_types = {item.get("unitType") for item in items if item.get("unitType")}
     return {
         "evidence_class": "ACTUAL",
         "net_amount": net_amount,
         "gross_amount": gross_amount,
-        "net_quantity": net_quantity,
+        "discount_amount": discount_amount,
+        "net_quantity": net_quantity if len(unit_types) == 1 else None,
         "unit_type": next(iter(unit_types)) if len(unit_types) == 1 else None,
         "items": items,
         "reason": None,
