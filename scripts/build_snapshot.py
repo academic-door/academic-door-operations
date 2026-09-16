@@ -9,6 +9,9 @@ import json
 from pathlib import Path
 
 
+LEGACY_DEFERRED_ACTION_PREFIX = "Account-level read access will eventually be required"
+
+
 def _merge_costs(seed_costs: list[dict], billing: dict) -> list[dict]:
     costs = copy.deepcopy(seed_costs)
     github = next((item for item in costs if item.get("id") == "github-actions"), None)
@@ -119,7 +122,13 @@ def _credentials(seed_credentials: list[dict], github_evidence: dict) -> list[di
 
 
 def _human_actions(seed_actions: list[str], gaps: list[dict]) -> list[str]:
-    actions = [item for item in seed_actions if item and item != "NONE"]
+    actions = [
+        item
+        for item in seed_actions
+        if item
+        and item != "NONE"
+        and not item.startswith(LEGACY_DEFERRED_ACTION_PREFIX)
+    ]
     for gap in gaps:
         area = gap.get("area")
         if area == "github-billing":
