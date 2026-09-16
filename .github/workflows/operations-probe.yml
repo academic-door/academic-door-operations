@@ -26,7 +26,7 @@ jobs:
           owner: academic-door
 
       - name: Collect GitHub operations evidence
-        run: python scripts/collect_github.py --org academic-door --output data/github-latest.json
+        run: python -m scripts.collect_github --org academic-door --output data/github-latest.json
         env:
           GITHUB_READ_TOKEN: ${{ steps.app-token.outputs.token }}
 
