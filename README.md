@@ -24,7 +24,7 @@ Current numbered Brains/repositories are only the present inventory. They do not
 
 ## Evidence classes
 
-- `ACTUAL`: authoritative billed amount or directly observed metered/runtime fact.
+- `ACTUAL`: authoritative billed amount or metered usage.
 - `PROVIDER_REPORTED`: provider-reported quota/rate/remaining/reset state.
 - `ESTIMATED`: derived from repository/runtime evidence when authoritative billing is unavailable.
 - `UNKNOWN`: not currently observable.
