@@ -53,7 +53,6 @@ Repository permissions:
 
 - **Metadata: Read** (baseline GitHub App repository metadata access)
 - **Actions: Read**
-- **Contents: Read**
 - **Secrets: Read** — metadata only; GitHub's list/get secret endpoints do not reveal encrypted values
 
 Organization permissions:
@@ -61,7 +60,7 @@ Organization permissions:
 - **Administration: Read** — required for organization billing usage endpoints
 - **Secrets: Read** — organization Actions secret metadata only
 
-No repository or organization write permission belongs in this App.
+No repository or organization write permission belongs in this App. `Contents: Read` is also intentionally not requested yet because this GitHub slice does not read repository files; if a later owner-telemetry adapter needs it, that permission must be added through a separate reviewed change.
 
 The workflow expects:
 
