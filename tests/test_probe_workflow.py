@@ -24,7 +24,10 @@ class ProbeWorkflowContractTests(unittest.TestCase):
         text = WORKFLOW.read_text(encoding="utf-8")
         for required in (
             "python -m scripts.collect_github",
+            "python -m scripts.collect_owner_telemetry",
+            "data/owner-latest.json",
             "scripts/build_snapshot.py",
+            "--owner data/owner-latest.json",
             "scripts/validate_snapshot.py data/latest.json",
             "scripts/render_report.py data/latest.json reports/latest.md",
             "actions/upload-artifact@v4",
