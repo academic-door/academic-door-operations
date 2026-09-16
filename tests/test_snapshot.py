@@ -1,5 +1,5 @@
+import copy
 import json
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -45,6 +45,30 @@ class SnapshotContractTests(unittest.TestCase):
         ):
             self.assertIn(heading, first)
         self.assertIn("Secret values are never collected", first)
+
+    def test_actual_zero_bill_preserves_gross_and_discount_context(self):
+        snapshot = copy.deepcopy(self.snapshot)
+        github = next(item for item in snapshot["costs"] if item["id"] == "github-actions")
+        github.update(
+            {
+                "evidence_class": "ACTUAL",
+                "amount": 0.0,
+                "currency": None,
+                "gross_amount": 99.584454,
+                "discount_amount": 99.674454,
+                "usage_quantity": None,
+                "usage_unit": None,
+                "usage_summary": "actions_linux: gross=16167 minutes; actions_storage: gross=7685.4 gigabyte-hours",
+                "status": "current-month billable net is zero; observed usage is covered by included usage/discounts",
+            }
+        )
+        text = render(snapshot)
+        self.assertIn("Net billable", text)
+        self.assertIn("Gross", text)
+        self.assertIn("Discount", text)
+        self.assertIn("0.0", text)
+        self.assertIn("99.584454", text)
+        self.assertNotIn("0.0 UNKNOWN", text)
 
 
 if __name__ == "__main__":
