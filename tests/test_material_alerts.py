@@ -86,6 +86,13 @@ class MaterialAlertTests(unittest.TestCase):
         self.assertEqual(alert["evidence_class"], "PROVIDER_REPORTED")
         self.assertIn("Semantic Scholar", alert["summary"])
 
+    def test_exhausted_label_without_authoritative_evidence_does_not_alert(self):
+        target = next(item for item in self.seed["quotas"] if item["id"] == "semantic-scholar-academic-graph")
+        target["status"] = "EXHAUSTED"
+        target["evidence_class"] = "UNKNOWN"
+        snapshot = build_snapshot(self.seed, self.github)
+        self.assertEqual(snapshot.get("alerts"), [])
+
     def test_report_renders_material_alerts_separately_from_human_actions(self):
         snapshot = copy.deepcopy(self.seed)
         snapshot["alerts"] = [
