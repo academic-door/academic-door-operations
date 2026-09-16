@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge bounded provider evidence into the normalized Operations snapshot."""
+"""Merge bounded GitHub and owner evidence into the normalized Operations snapshot."""
 
 from __future__ import annotations
 
@@ -62,6 +62,44 @@ def _merge_costs(seed_costs: list[dict], billing: dict) -> list[dict]:
     else:
         github["note"] = "UNKNOWN is preserved; no zero-cost inference is allowed."
     return costs
+
+
+def _merge_owner_costs(costs: list[dict], owner: dict | None) -> list[dict]:
+    result = copy.deepcopy(costs)
+    ai = (owner or {}).get("daily_ai_cost") or {}
+    if not ai:
+        return result
+    item = next((x for x in result if x.get("id") == "deepseek-daily-door"), None)
+    if item is None:
+        item = {
+            "id": "deepseek-daily-door",
+            "service": "DeepSeek AI / translation / enrichment — Daily Door",
+            "owner": "daily-door",
+            "consumer": "academic-door/econ-paper-monitor",
+        }
+        result.append(item)
+    item.update(
+        {
+            "evidence_class": "ESTIMATED",
+            "amount": ai.get("current_month_estimated_cost"),
+            "currency": ai.get("currency") or "USD",
+            "gross_amount": None,
+            "discount_amount": None,
+            "usage_quantity": ai.get("rolling_30d_requests"),
+            "usage_unit": "requests/rolling-30d",
+            "usage_summary": (
+                f"rolling30d_estimated_cost={ai.get('rolling_30d_estimated_cost')} {ai.get('currency') or 'USD'}; "
+                f"rolling30d_requests={ai.get('rolling_30d_requests')}"
+            ),
+            "status": "current-month cost estimate from owner token/request metering and pinned pricing table",
+            "source": "academic-door/econ-paper-monitor:data/ai_cost_usage.json",
+            "note": (
+                f"observed_at={ai.get('observed_at')}; pricing_version={ai.get('pricing_version')}; "
+                "ESTIMATED is not provider-billed spend."
+            ),
+        }
+    )
+    return result
 
 
 def _actions(entries: list[dict]) -> list[dict]:
@@ -144,6 +182,144 @@ def _credentials(seed_credentials: list[dict], github_evidence: dict) -> list[di
     return sorted(credentials, key=lambda item: item.get("logical_name", ""))
 
 
+def _merge_owner_credentials(credentials: list[dict], owner: dict | None) -> list[dict]:
+    result = copy.deepcopy(credentials)
+    by_name = {item.get("logical_name"): item for item in result}
+    usage = (owner or {}).get("daily_provider_usage") or {}
+    health = (owner or {}).get("daily_provider_health") or {}
+    providers = usage.get("providers") or {}
+    health_providers = health.get("providers") or {}
+
+    s2_usage = providers.get("semantic-scholar") or {}
+    s2 = by_name.get("SEMANTIC_SCHOLAR_API_KEY")
+    if s2 and s2_usage:
+        last_used = s2_usage.get("last_used_at")
+        pressure = health_providers.get("semantic-scholar") or {}
+        pressured = bool((pressure.get("control") or {}).get("circuit_open") or pressure.get("rate_limited"))
+        s2["status"] = (
+            f"configured; legitimate use observed at {last_used}; "
+            + ("provider pressure present" if pressured else "no current pressure observed")
+        )
+        note_parts = [s2.get("note") or ""]
+        if usage.get("synthetic_keepalive_observed"):
+            note_parts.append(
+                "Synthetic keep-alive still observed in owner telemetry; owner reconciliation remains "
+                f"econ-paper-monitor#208 (reason={usage.get('synthetic_keepalive_reason')})."
+            )
+        s2["note"] = " ".join(part for part in note_parts if part).strip()
+        s2["last_legitimate_use_source"] = "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json"
+
+    elsevier_usage = providers.get("elsevier") or {}
+    for logical_name in ("ELSEVIER_API_KEY", "ELSEVIER_INST_TOKEN"):
+        item = by_name.get(logical_name)
+        if item and elsevier_usage:
+            item["status"] = (
+                f"configured; legitimate use observed at {elsevier_usage.get('last_used_at')}; "
+                f"rate_limited={((elsevier_usage.get('total') or {}).get('rate_limited', 0))}"
+            )
+            item["last_legitimate_use_source"] = "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json"
+
+    return sorted(result, key=lambda item: item.get("logical_name", ""))
+
+
+def _quota_status(provider_name: str, payload: dict) -> str:
+    rate_limited = payload.get("rate_limited", 0) or 0
+    failed = payload.get("failed", 0) or 0
+    circuit_open = bool((payload.get("control") or {}).get("circuit_open"))
+    if provider_name == "semantic-scholar" and (rate_limited or circuit_open):
+        return "PRESSURED"
+    if rate_limited:
+        return "PRESSURED"
+    if failed:
+        return "WATCH"
+    return "HEALTHY"
+
+
+def _merge_owner_quotas(seed_quotas: list[dict], owner: dict | None) -> list[dict]:
+    result = copy.deepcopy(seed_quotas)
+    by_id = {item.get("id"): item for item in result}
+    health = (owner or {}).get("daily_provider_health") or {}
+    providers = health.get("providers") or {}
+    mappings = {
+        "semantic-scholar": ("semantic-scholar-academic-graph", "Semantic Scholar"),
+        "elsevier": ("elsevier-metadata", "Elsevier"),
+        "crossref": ("crossref", "Crossref"),
+        "openalex": ("openalex", "OpenAlex"),
+    }
+    for provider_name, (item_id, display_name) in mappings.items():
+        payload = providers.get(provider_name)
+        if not payload:
+            continue
+        item = by_id.get(item_id)
+        if item is None:
+            item = {
+                "id": item_id,
+                "provider": display_name,
+                "owner": "daily-door" if provider_name == "semantic-scholar" else "product-local-provider-use",
+            }
+            result.append(item)
+            by_id[item_id] = item
+        control = payload.get("control") or {}
+        item.update(
+            {
+                "evidence_class": "PROVIDER_REPORTED",
+                "limit": None,
+                "remaining": None,
+                "status": _quota_status(provider_name, payload),
+                "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+                "note": (
+                    f"observed_at={health.get('observed_at')}; attempts={payload.get('attempts', 0)}; "
+                    f"available={payload.get('available', 0)}; empty={payload.get('empty', 0)}; "
+                    f"failed={payload.get('failed', 0)}; rate_limited={payload.get('rate_limited', 0)}; "
+                    f"skipped={payload.get('skipped', 0)}"
+                    + (
+                        f"; circuit_open={control.get('circuit_open')}; client_target_rps={control.get('client_target_rps')}"
+                        if control
+                        else ""
+                    )
+                    + "; provider account quota is not invented when not exposed"
+                ),
+            }
+        )
+    return result
+
+
+def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None) -> list[dict]:
+    result = copy.deepcopy(seed_services)
+    by_id = {item.get("id"): item for item in result}
+    github = by_id.get("github-organization")
+    if github and billing.get("evidence_class") == "ACTUAL":
+        github["evidence_class"] = "ACTUAL"
+        github["status"] = "operational; organization Actions billing usage observable"
+        github["source"] = "GitHub organization billing usage summary API"
+
+    journals = (owner or {}).get("journals_monitoring") or {}
+    if journals:
+        item = by_id.get("journals-production-monitor")
+        if item is None:
+            item = {
+                "id": "journals-production-monitor",
+                "category": "product-runtime-health",
+                "owner": "journal-system",
+            }
+            result.append(item)
+            by_id[item["id"]] = item
+        summary = journals.get("summary") or {}
+        item.update(
+            {
+                "evidence_class": "ACTUAL",
+                "status": (
+                    f"{journals.get('status')}; configured_journals={summary.get('configured_journals', 0)}; "
+                    f"warnings={summary.get('warnings', 0)}; failed={summary.get('failed', 0)}; "
+                    f"awaiting_official={summary.get('awaiting_official', 0)}"
+                ),
+                "source": "academic-door/journals:data:public/api/v1/monitoring.json",
+                "note": f"observed_at={journals.get('observed_at')}; schedule={journals.get('schedule')}",
+            }
+        )
+    return result
+
+
 def _human_actions(seed_actions: list[str], gaps: list[dict]) -> list[str]:
     actions = [
         item
@@ -161,12 +337,16 @@ def _human_actions(seed_actions: list[str], gaps: list[dict]) -> list[str]:
     return list(dict.fromkeys(actions))
 
 
-def build_snapshot(seed: dict, github_evidence: dict) -> dict:
+def build_snapshot(seed: dict, github_evidence: dict, owner_evidence: dict | None = None) -> dict:
     snapshot = copy.deepcopy(seed)
-    snapshot["observed_at"] = github_evidence["observed_at"]
-    snapshot["costs"] = _merge_costs(seed.get("costs", []), github_evidence.get("billing", {}))
+    snapshot["observed_at"] = (owner_evidence or {}).get("observed_at") or github_evidence["observed_at"]
+    costs = _merge_costs(seed.get("costs", []), github_evidence.get("billing", {}))
+    snapshot["costs"] = _merge_owner_costs(costs, owner_evidence)
     snapshot["actions"] = _actions(github_evidence.get("actions", []))
-    snapshot["credentials"] = _credentials(seed.get("credentials", []), github_evidence)
+    credentials = _credentials(seed.get("credentials", []), github_evidence)
+    snapshot["credentials"] = _merge_owner_credentials(credentials, owner_evidence)
+    snapshot["quotas"] = _merge_owner_quotas(seed.get("quotas", []), owner_evidence)
+    snapshot["services"] = _merge_services(seed.get("services", []), github_evidence.get("billing", {}), owner_evidence)
     snapshot["human_actions"] = _human_actions(seed.get("human_actions", []), github_evidence.get("gaps", []))
     return snapshot
 
@@ -175,12 +355,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", default="data/seed-snapshot.json")
     parser.add_argument("--github", default="data/github-latest.json")
+    parser.add_argument("--owner", default=None)
     parser.add_argument("--output", default="data/latest.json")
     args = parser.parse_args()
 
     seed = json.loads(Path(args.seed).read_text(encoding="utf-8"))
     github = json.loads(Path(args.github).read_text(encoding="utf-8"))
-    snapshot = build_snapshot(seed, github)
+    owner = json.loads(Path(args.owner).read_text(encoding="utf-8")) if args.owner else None
+    snapshot = build_snapshot(seed, github, owner)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
