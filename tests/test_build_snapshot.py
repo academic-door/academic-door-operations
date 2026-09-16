@@ -101,9 +101,13 @@ class BuildSnapshotTests(unittest.TestCase):
         self.assertEqual(jina["visibility"], "selected")
         self.assertIn("academic-door/econ-paper-monitor", new["consumers"])
         self.assertEqual(new["secret_value_policy"], "NEVER_COLLECT")
+        for credential in snapshot["credentials"]:
+            self.assertNotIn("secret_value", credential)
+            self.assertNotIn("value", credential)
+            self.assertNotIn("token", credential)
+            self.assertNotIn("private_key", credential)
         serialized = json.dumps(snapshot)
         self.assertNotIn("must-not-survive", serialized)
-        self.assertNotIn("secret_value", serialized)
 
 
 if __name__ == "__main__":
