@@ -344,6 +344,9 @@ def _material_alerts(snapshot: dict) -> list[dict]:
     for quota in snapshot.get("quotas", []):
         if quota.get("status") != "EXHAUSTED":
             continue
+        evidence = quota.get("evidence_class")
+        if evidence not in {"ACTUAL", "PROVIDER_REPORTED"}:
+            continue
         quota_id = quota.get("id") or "unknown"
         provider = quota.get("provider") or quota_id
         alerts.append(
@@ -352,7 +355,7 @@ def _material_alerts(snapshot: dict) -> list[dict]:
                 "severity": "PARENT_REVIEW",
                 "scope": "PARENT",
                 "condition": "AUTHORITATIVE_QUOTA_EXHAUSTED",
-                "evidence_class": quota.get("evidence_class") or "UNKNOWN",
+                "evidence_class": evidence,
                 "summary": f"{provider} quota is explicitly reported EXHAUSTED",
                 "source": quota.get("source") or "normalized provider quota evidence",
             }
