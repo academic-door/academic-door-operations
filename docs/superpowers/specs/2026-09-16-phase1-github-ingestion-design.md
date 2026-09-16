@@ -22,7 +22,6 @@ Automate the GitHub-facing part of Academic Door Operations with a read-only, to
 Repository permissions:
 - Metadata: read (GitHub App baseline metadata access).
 - Actions: read — enumerate workflows/runs for private repositories.
-- Contents: read — read bounded owner telemetry/config files when a later adapter needs them.
 - Secrets: read — list repository Actions secret metadata only; values are never exposed by the API.
 
 Organization permissions:
@@ -30,6 +29,8 @@ Organization permissions:
 - Secrets: read — list organization Actions secret metadata only.
 
 Repository access: install on **all repositories** in `academic-door` so newly created repositories enter scope automatically. The App is not installed outside the Academic Door organization.
+
+`Contents: read` is intentionally **not** requested for this slice because the current collector does not read repository contents. If a later owner-telemetry adapter needs cross-repository files, that permission must be added through a separate reviewed change rather than pre-granted.
 
 ## Authentication
 
