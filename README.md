@@ -43,7 +43,7 @@ Tracked by #3. The first automated slice is GitHub-wide observation:
 - inventory GitHub Actions secret **metadata only** (logical names, timestamps, visibility/scope), never secret values;
 - merge the observed evidence into `data/latest.json` and render `reports/latest.md`.
 
-The manual probe workflow is `.github/workflows/operations-probe.yml`. It intentionally has **no schedule** until the read-only App is configured and a manual probe is accepted.
+The first live manual probe was accepted on 2026-09-16: workflow run `35131360875` completed successfully on `main`, including App-token minting, Academic Door-wide collection, normalized snapshot validation, report rendering, and bounded artifact upload. That acceptance permits one bounded daily read-only run. The workflow remains manually dispatchable as well.
 
 ### Academic Door Operations GitHub App — minimum permission contract
 
@@ -69,12 +69,12 @@ The workflow expects:
 
 `actions/create-github-app-token@v3` uses those to mint a short-lived installation token. Cross-repository reads use that token; report generation itself does not grant the App any write path.
 
-### Activation gate
+### Activation state
 
-1. Merge the collector/probe implementation with CI green.
-2. Human Principal creates and installs the App with exactly the permissions above, then configures `OPS_APP_CLIENT_ID` and `OPS_APP_PRIVATE_KEY` in this private repository.
-3. Run `Operations read-only probe` manually.
-4. Verify the bounded artifacts and permission gaps.
-5. Only then consider enabling a daily schedule and bounded report history.
+1. Collector/probe implementation merged with CI green. ✅
+2. Human Principal created and installed the least-privilege App and configured the variable/secret. ✅
+3. Live manual probe run `35131360875` succeeded. ✅
+4. Bounded artifacts and account-level billing permission were verified. ✅
+5. Daily read-only report schedule with 30-day artifact retention is the accepted next slice.
 
-Until step 3 succeeds, account-level actual billing remains `UNKNOWN`; it must never be inferred as zero.
+Account-level GitHub Actions billing is now observable as `ACTUAL` when the billing API responds successfully; `UNKNOWN` remains mandatory for any unavailable provider/account surface.
