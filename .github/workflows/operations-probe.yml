@@ -1,10 +1,16 @@
-name: Operations read-only probe
+name: Operations daily read-only report
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "17 9 * * *"
 
 permissions:
   contents: read
+
+concurrency:
+  group: academic-door-operations-daily-report
+  cancel-in-progress: false
 
 jobs:
   probe:
@@ -39,12 +45,12 @@ jobs:
       - name: Render private report
         run: python scripts/render_report.py data/latest.json reports/latest.md
 
-      - name: Upload bounded probe artifacts
+      - name: Upload bounded report artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: operations-read-only-probe
+          name: operations-read-only-report
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30
           path: |
             data/github-latest.json
             data/latest.json
