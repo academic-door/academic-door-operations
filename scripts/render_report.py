@@ -87,9 +87,31 @@ def render(snapshot):
             [[x["repository"], x["workflow_class"], x["evidence_class"], x["status"]] for x in snapshot["actions"]],
         ),
         "",
-        "## Human Principal actions",
+        "## Material alerts",
         "",
     ]
+
+    alerts = snapshot.get("alerts", [])
+    if alerts:
+        lines.append(
+            table(
+                ["Condition", "Severity", "Evidence", "Summary", "Source"],
+                [
+                    [
+                        item["condition"],
+                        item["severity"],
+                        item["evidence_class"],
+                        item["summary"],
+                        item["source"],
+                    ]
+                    for item in alerts
+                ],
+            )
+        )
+    else:
+        lines.append("- NONE")
+
+    lines.extend(["", "## Human Principal actions", ""])
     if snapshot["human_actions"]:
         lines.extend(f"- {item}" for item in snapshot["human_actions"])
     else:
