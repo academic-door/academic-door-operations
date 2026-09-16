@@ -5,7 +5,10 @@ from pathlib import Path
 
 EVIDENCE = {"ACTUAL", "PROVIDER_REPORTED", "ESTIMATED", "UNKNOWN"}
 QUOTA_STATUS = {"HEALTHY", "WATCH", "PRESSURED", "EXHAUSTED", "UNKNOWN"}
+ALERT_SEVERITY = {"PARENT_REVIEW"}
+ALERT_SCOPE = {"PARENT"}
 REQUIRED = {"schema_version", "observed_at", "scope", "costs", "quotas", "credentials", "services", "actions", "human_actions"}
+ALERT_REQUIRED = {"id", "severity", "scope", "condition", "evidence_class", "summary", "source"}
 FORBIDDEN_KEYS = {"secret_value", "token", "authorization", "password", "private_key", "cookie"}
 
 
@@ -38,6 +41,21 @@ def validate(snapshot):
         bad = lowered & FORBIDDEN_KEYS
         if bad:
             errors.append(f"credentials[{i}] contains forbidden secret-bearing field(s): {sorted(bad)}")
+
+    for i, item in enumerate(snapshot.get("alerts", [])):
+        missing_alert = ALERT_REQUIRED - item.keys()
+        if missing_alert:
+            errors.append(f"alerts[{i}] missing fields: {sorted(missing_alert)}")
+        if item.get("evidence_class") not in EVIDENCE:
+            errors.append(f"alerts[{i}] invalid evidence_class: {item.get('evidence_class')!r}")
+        if item.get("severity") not in ALERT_SEVERITY:
+            errors.append(f"alerts[{i}] invalid severity: {item.get('severity')!r}")
+        if item.get("scope") not in ALERT_SCOPE:
+            errors.append(f"alerts[{i}] invalid scope: {item.get('scope')!r}")
+        lowered = {str(k).lower() for k in item}
+        bad = lowered & FORBIDDEN_KEYS
+        if bad:
+            errors.append(f"alerts[{i}] contains forbidden secret-bearing field(s): {sorted(bad)}")
 
     return errors
 
