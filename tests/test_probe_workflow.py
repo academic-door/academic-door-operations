@@ -22,7 +22,7 @@ class ProbeWorkflowContractTests(unittest.TestCase):
     def test_probe_builds_validates_renders_and_uploads_artifacts(self):
         text = WORKFLOW.read_text(encoding="utf-8")
         for required in (
-            "scripts/collect_github.py",
+            "python -m scripts.collect_github",
             "scripts/build_snapshot.py",
             "scripts/validate_snapshot.py data/latest.json",
             "scripts/render_report.py data/latest.json reports/latest.md",
