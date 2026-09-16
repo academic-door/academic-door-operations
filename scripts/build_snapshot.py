@@ -320,6 +320,47 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
     return result
 
 
+def _material_alerts(snapshot: dict) -> list[dict]:
+    alerts = []
+
+    github = next((item for item in snapshot.get("costs", []) if item.get("id") == "github-actions"), None)
+    if github and github.get("evidence_class") == "ACTUAL":
+        amount = github.get("amount")
+        if isinstance(amount, (int, float)) and amount > 0:
+            currency = github.get("currency")
+            amount_text = f"{amount} {currency}" if currency else str(amount)
+            alerts.append(
+                {
+                    "id": "github-actions-positive-billable-net",
+                    "severity": "PARENT_REVIEW",
+                    "scope": "PARENT",
+                    "condition": "GITHUB_ACTIONS_POSITIVE_BILLABLE_NET",
+                    "evidence_class": "ACTUAL",
+                    "summary": f"GitHub Actions current-period billable net is positive: {amount_text}",
+                    "source": github.get("source") or "GitHub organization billing evidence",
+                }
+            )
+
+    for quota in snapshot.get("quotas", []):
+        if quota.get("status") != "EXHAUSTED":
+            continue
+        quota_id = quota.get("id") or "unknown"
+        provider = quota.get("provider") or quota_id
+        alerts.append(
+            {
+                "id": f"quota-exhausted-{quota_id}",
+                "severity": "PARENT_REVIEW",
+                "scope": "PARENT",
+                "condition": "AUTHORITATIVE_QUOTA_EXHAUSTED",
+                "evidence_class": quota.get("evidence_class") or "UNKNOWN",
+                "summary": f"{provider} quota is explicitly reported EXHAUSTED",
+                "source": quota.get("source") or "normalized provider quota evidence",
+            }
+        )
+
+    return alerts
+
+
 def _human_actions(seed_actions: list[str], gaps: list[dict]) -> list[str]:
     actions = [
         item
@@ -348,6 +389,7 @@ def build_snapshot(seed: dict, github_evidence: dict, owner_evidence: dict | Non
     snapshot["quotas"] = _merge_owner_quotas(seed.get("quotas", []), owner_evidence)
     snapshot["services"] = _merge_services(seed.get("services", []), github_evidence.get("billing", {}), owner_evidence)
     snapshot["human_actions"] = _human_actions(seed.get("human_actions", []), github_evidence.get("gaps", []))
+    snapshot["alerts"] = _material_alerts(snapshot)
     return snapshot
 
 
