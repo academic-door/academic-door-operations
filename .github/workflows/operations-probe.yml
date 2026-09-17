@@ -3,7 +3,7 @@ name: Operations daily read-only report
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 9 * * *"
+    - cron: "57 10 * * *"
 
 permissions:
   contents: read

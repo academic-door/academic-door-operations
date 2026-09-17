@@ -11,7 +11,7 @@ class ProbeWorkflowContractTests(unittest.TestCase):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", text)
         self.assertIn("schedule:", text)
-        self.assertIn("cron: \"17 9 * * *\"", text)
+        self.assertIn("cron: \"57 10 * * *\"", text)
         self.assertIn("OPS_APP_CLIENT_ID", text)
         self.assertIn("OPS_APP_PRIVATE_KEY", text)
         self.assertIn("actions/create-github-app-token@v3", text)
