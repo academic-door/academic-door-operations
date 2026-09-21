@@ -81,7 +81,7 @@ def render(snapshot):
         "## Cost / usage",
         "",
         table(
-            ["Service", "Owner", "Evidence", "Coverage", "Amount / billable", "Usage / quota", "Evidence observed", "Status"],
+            ["Service", "Owner", "Evidence", "Coverage", "Net billable", "Gross", "Discount", "Usage / quota", "Evidence observed", "Status"],
             [
                 [
                     x["service"],
@@ -89,6 +89,8 @@ def render(snapshot):
                     x["evidence_class"],
                     x.get("coverage_status", "UNKNOWN"),
                     _cost_value(x, "amount"),
+                    _cost_value(x, "gross_amount"),
+                    _cost_value(x, "discount_amount"),
                     x.get("included_quota") or _usage_value(x),
                     x.get("evidence_observed_at") or "UNKNOWN",
                     x["status"],
