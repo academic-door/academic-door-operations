@@ -11,6 +11,26 @@ from pathlib import Path
 
 LEGACY_DEFERRED_ACTION_PREFIX = "Account-level read access will eventually be required"
 
+CREDENTIAL_CLASSIFICATION = {
+    "AUTO_REVIEWER_APP_ID": ("GitHub App", "journal-system"),
+    "AUTO_REVIEWER_PRIVATE_KEY": ("GitHub App", "journal-system"),
+    "CF_WEB_ANALYTICS_TOKEN": ("Cloudflare", "frontier-door"),
+    "CLOUDFLARE_ACCOUNT_ID": ("Cloudflare", "mixed-product-runtime"),
+    "CLOUDFLARE_API_TOKEN": ("Cloudflare", "mixed-product-runtime"),
+    "COMPOSER_DEPLOY_KEY": ("GitHub Deploy Key", "composer"),
+    "DEEPSEEK_API_KEY": ("DeepSeek", "product-local-with-parent-cost-escalation"),
+    "NOTIFICATION_EMAIL_TO": ("NetEase 163 project mailbox", "parent-shared-notification-routing"),
+    "OPS_APP_PRIVATE_KEY": ("GitHub App", "parent-shared-operations"),
+    "PUBLIC_PAGES_DEPLOY_KEY": ("GitHub Deploy Key", "frontier-door"),
+    "QWEN_API_KEY": ("Qwen / DashScope / Alibaba Cloud", "daily-door-benchmark-capability"),
+    "SMTP_FROM": ("NetEase 163 SMTP", "journal-system"),
+    "SMTP_HOST": ("NetEase 163 SMTP", "journal-system"),
+    "SMTP_PASSWORD": ("NetEase 163 SMTP", "journal-system"),
+    "SMTP_PORT": ("NetEase 163 SMTP", "journal-system"),
+    "SMTP_SECURITY": ("NetEase 163 SMTP", "journal-system"),
+    "SMTP_USERNAME": ("NetEase 163 SMTP", "journal-system"),
+}
+
 
 def _billing_usage_summary(items: list[dict]) -> str | None:
     parts = []
@@ -24,7 +44,7 @@ def _billing_usage_summary(items: list[dict]) -> str | None:
     return "; ".join(parts) if parts else None
 
 
-def _merge_costs(seed_costs: list[dict], billing: dict) -> list[dict]:
+def _merge_costs(seed_costs: list[dict], billing: dict, observed_at: str | None = None) -> list[dict]:
     costs = copy.deepcopy(seed_costs)
     github = next((item for item in costs if item.get("id") == "github-actions"), None)
     if github is None:
@@ -54,6 +74,16 @@ def _merge_costs(seed_costs: list[dict], billing: dict) -> list[dict]:
         github["status"] = billing.get("reason") or "organization billing usage unavailable"
 
     github["source"] = "GitHub organization billing usage summary API"
+    github["evidence_observed_at"] = observed_at or github.get("evidence_observed_at")
+    github["coverage_status"] = (
+        "ACTUAL_BILLED" if github["evidence_class"] == "ACTUAL" else "ACCOUNT_BILLING_UNKNOWN"
+    )
+    github["next_evidence_route"] = (
+        "Continue the accepted GitHub organization billing usage API. "
+        "Keep remaining included allowance UNKNOWN unless GitHub exposes it directly."
+    )
+    github["human_action_required"] = False
+    github["human_action_reason"] = None
     if github["evidence_class"] == "ACTUAL":
         github["note"] = (
             f"gross_amount={github.get('gross_amount')}; discount_amount={github.get('discount_amount')}; "
@@ -97,6 +127,14 @@ def _merge_owner_costs(costs: list[dict], owner: dict | None) -> list[dict]:
                 f"observed_at={ai.get('observed_at')}; pricing_version={ai.get('pricing_version')}; "
                 "ESTIMATED is not provider-billed spend."
             ),
+            "coverage_status": "ESTIMATED_USAGE",
+            "evidence_observed_at": ai.get("observed_at") or item.get("evidence_observed_at"),
+            "next_evidence_route": (
+                "Continue owner request/token metering for ESTIMATED cost; use an authoritative "
+                "DeepSeek billing/usage console, export, or read-only account API to promote billed spend to ACTUAL."
+            ),
+            "human_action_required": False,
+            "human_action_reason": None,
         }
     )
     return result
@@ -169,6 +207,19 @@ def _credentials(seed_credentials: list[dict], github_evidence: dict) -> list[di
             item["storage_scope"] = scope if not previous_scope or previous_scope == scope else "mixed"
         if metadata.get("visibility") is not None:
             item["visibility"] = metadata.get("visibility")
+
+        classification = CREDENTIAL_CLASSIFICATION.get(name)
+        if classification:
+            provider, owner = classification
+            item["provider"] = provider
+            item["owner"] = owner
+            existing_note = item.get("note") or ""
+            classification_note = (
+                "Provider/owner classification is metadata-only from the logical credential name and "
+                "current owner contract; no secret value was read."
+            )
+            if classification_note not in existing_note:
+                item["note"] = " ".join(part for part in (existing_note, classification_note) if part).strip()
 
         # Whitelist only metadata fields above. Values/tokens/authorization data are never copied.
         item.pop("secret_value", None)
@@ -384,7 +435,7 @@ def _human_actions(seed_actions: list[str], gaps: list[dict]) -> list[str]:
 def build_snapshot(seed: dict, github_evidence: dict, owner_evidence: dict | None = None) -> dict:
     snapshot = copy.deepcopy(seed)
     snapshot["observed_at"] = (owner_evidence or {}).get("observed_at") or github_evidence["observed_at"]
-    costs = _merge_costs(seed.get("costs", []), github_evidence.get("billing", {}))
+    costs = _merge_costs(seed.get("costs", []), github_evidence.get("billing", {}), github_evidence.get("observed_at"))
     snapshot["costs"] = _merge_owner_costs(costs, owner_evidence)
     snapshot["actions"] = _actions(github_evidence.get("actions", []))
     credentials = _credentials(seed.get("credentials", []), github_evidence)

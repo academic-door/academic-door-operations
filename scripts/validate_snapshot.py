@@ -10,6 +10,38 @@ ALERT_SCOPE = {"PARENT"}
 REQUIRED = {"schema_version", "observed_at", "scope", "costs", "quotas", "credentials", "services", "actions", "human_actions"}
 ALERT_REQUIRED = {"id", "severity", "scope", "condition", "evidence_class", "summary", "source"}
 FORBIDDEN_KEYS = {"secret_value", "token", "authorization", "password", "private_key", "cookie"}
+COST_COVERAGE_STATUS = {
+    "ACTUAL_BILLED",
+    "ESTIMATED_USAGE",
+    "PROVIDER_REPORTED_FREE",
+    "PROVIDER_REPORTED_QUOTA",
+    "ACCOUNT_BILLING_UNKNOWN",
+}
+COST_REQUIRED = {
+    "id",
+    "service",
+    "owner",
+    "evidence_class",
+    "coverage_status",
+    "status",
+    "evidence_observed_at",
+    "next_evidence_route",
+    "human_action_required",
+}
+
+
+def _scan_forbidden(value, path="$"):
+    errors = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if str(key).lower() in FORBIDDEN_KEYS:
+                errors.append(f"{path}.{key} contains forbidden secret-bearing field")
+            errors.extend(_scan_forbidden(child, f"{path}.{key}"))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            errors.extend(_scan_forbidden(child, f"{path}[{index}]"))
+    return errors
+
 
 
 def validate(snapshot):
@@ -29,6 +61,23 @@ def validate(snapshot):
                 errors.append(f"{section}[{i}] invalid evidence_class: {evidence!r}")
             if evidence == "UNKNOWN" and item.get("amount") == 0:
                 errors.append(f"{section}[{i}] UNKNOWN must not be represented as zero")
+
+    for i, item in enumerate(snapshot.get("costs", [])):
+        missing_cost = COST_REQUIRED - item.keys()
+        if missing_cost:
+            errors.append(f"costs[{i}] missing fields: {sorted(missing_cost)}")
+        if item.get("coverage_status") not in COST_COVERAGE_STATUS:
+            errors.append(f"costs[{i}] invalid coverage_status: {item.get('coverage_status')!r}")
+        if not item.get("evidence_observed_at"):
+            errors.append(f"costs[{i}] evidence_observed_at must be non-empty")
+        if not item.get("next_evidence_route"):
+            errors.append(f"costs[{i}] next_evidence_route must be non-empty")
+        if not isinstance(item.get("human_action_required"), bool):
+            errors.append(f"costs[{i}] human_action_required must be boolean")
+        if item.get("human_action_required") and not item.get("human_action_reason"):
+            errors.append(f"costs[{i}] human_action_reason required when human_action_required=true")
+        if item.get("evidence_class") == "UNKNOWN" and item.get("coverage_status") != "ACCOUNT_BILLING_UNKNOWN":
+            errors.append(f"costs[{i}] UNKNOWN cost must use ACCOUNT_BILLING_UNKNOWN coverage_status")
 
     for i, item in enumerate(snapshot.get("quotas", [])):
         if item.get("status") not in QUOTA_STATUS:
@@ -57,6 +106,7 @@ def validate(snapshot):
         if bad:
             errors.append(f"alerts[{i}] contains forbidden secret-bearing field(s): {sorted(bad)}")
 
+    errors.extend(_scan_forbidden(snapshot))
     return errors
 
 
