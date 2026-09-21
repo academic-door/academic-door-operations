@@ -40,8 +40,6 @@ def _scan_forbidden(value, path="$"):
     elif isinstance(value, list):
         for index, child in enumerate(value):
             errors.extend(_scan_forbidden(child, f"{path}[{index}]"))
-    errors.extend(_scan_forbidden(snapshot))
-
     return errors
 
 
@@ -108,6 +106,7 @@ def validate(snapshot):
         if bad:
             errors.append(f"alerts[{i}] contains forbidden secret-bearing field(s): {sorted(bad)}")
 
+    errors.extend(_scan_forbidden(snapshot))
     return errors
 
 
