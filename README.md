@@ -94,3 +94,19 @@ The workflow expects:
 6. Public owner-telemetry ingestion is the current Phase-1 expansion slice.
 
 Account-level GitHub Actions billing is observable as `ACTUAL` when the billing API responds successfully; `UNKNOWN` remains mandatory for any unavailable provider/account surface.
+
+## Phase 2b — cost coverage ledger
+
+Tracked by #11 under the Parent decision in `academic-door-main-control#65`.
+
+The normalized `costs` array is the single bounded cost-coverage ledger. Each row carries:
+- evidence class and coverage status;
+- current amount/usage/plan or included-quota facts when supported;
+- immutable evidence observation time;
+- durable source pointer;
+- an explicit `next_evidence_route`;
+- whether a Human Principal action is currently required.
+
+The report separates ACTUAL billed subtotal, ESTIMATED usage cost, provider-reported free/quota surfaces, and named account-billing UNKNOWN residuals. An authorized paid budget of zero is governance metadata only and is never converted into billed spend zero without provider/account evidence.
+
+Current account routes remain read-only. New provider account permissions/tokens/connectors, payment methods, plan changes, credential rotation, secret/session extraction, or product-runtime coupling return to ① before acquisition.
