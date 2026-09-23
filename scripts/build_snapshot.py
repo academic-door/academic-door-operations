@@ -344,7 +344,90 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
         github["status"] = "operational; organization Actions billing usage observable"
         github["source"] = "GitHub organization billing usage summary API"
 
-    journals = (owner or {}).get("journals_monitoring") or {}
+    owner = owner or {}
+    ai = owner.get("daily_ai_cost") or {}
+    deepseek = by_id.get("deepseek-inference")
+    if deepseek and ai:
+        requests = ai.get("rolling_30d_requests")
+        estimate = ai.get("rolling_30d_estimated_cost")
+        deepseek.update(
+            {
+                "evidence_class": "ACTUAL",
+                "status": (
+                    f"active owner-metered inference; rolling30d_requests={requests}; "
+                    f"rolling30d_estimated_cost={estimate} {ai.get('currency') or 'USD'}"
+                ),
+                "source": "academic-door/econ-paper-monitor:data/ai_cost_usage.json",
+                "note": (
+                    f"observed_at={ai.get('observed_at')}; pricing_version={ai.get('pricing_version')}; "
+                    "operational use is ACTUAL owner telemetry while billing remains separately ESTIMATED"
+                ),
+                "lifecycle_state": "ACTIVE" if (requests or 0) > 0 else deepseek.get("lifecycle_state", "ACTIVE"),
+                "usefulness_status": "PROVEN" if (requests or 0) > 0 else deepseek.get("usefulness_status", "ACTIVE_UNVERIFIED"),
+                "last_success_at": ai.get("observed_at") if (requests or 0) > 0 else deepseek.get("last_success_at"),
+                "last_success_source": (
+                    "academic-door/econ-paper-monitor:data/ai_cost_usage.json"
+                    if (requests or 0) > 0
+                    else deepseek.get("last_success_source")
+                ),
+            }
+        )
+
+    health = owner.get("daily_provider_health") or {}
+    usage = owner.get("daily_provider_usage") or {}
+    health_providers = health.get("providers") or {}
+    usage_providers = usage.get("providers") or {}
+
+    for provider_name, service_id in (
+        ("semantic-scholar", "semantic-scholar"),
+        ("elsevier", "elsevier-metadata"),
+    ):
+        item = by_id.get(service_id)
+        if item is None:
+            continue
+        hp = health_providers.get(provider_name) or {}
+        up = usage_providers.get(provider_name) or {}
+        total = up.get("total") or {}
+        control = hp.get("control") or {}
+        available = total.get("available", hp.get("available", 0)) or 0
+        rate_limited = hp.get("rate_limited", 0) or 0
+        failed = hp.get("failed", 0) or 0
+        http_error = hp.get("http_error", 0) or 0
+        skipped = hp.get("skipped", 0) or 0
+        degraded = bool(rate_limited or failed or http_error or control.get("circuit_open"))
+        item.update(
+            {
+                "evidence_class": "ACTUAL",
+                "status": (
+                    f"active owner runtime; available={available}; rate_limited={rate_limited}; "
+                    f"failed={failed}; skipped={skipped}; circuit_open={control.get('circuit_open')}"
+                ),
+                "source": (
+                    "academic-door/econ-paper-monitor:data/metadata_provider_health.json; "
+                    "data/semantic_scholar_usage.json"
+                ),
+                "note": (
+                    f"health_observed_at={health.get('observed_at')}; usage_observed_at={usage.get('observed_at')}; "
+                    "provider account quota/billing is not invented"
+                ),
+                "lifecycle_state": "ACTIVE_DEGRADED" if degraded else "ACTIVE",
+                "usefulness_status": "PROVEN" if available > 0 else "ACTIVE_UNVERIFIED",
+                "last_success_at": up.get("last_used_at") if available > 0 else item.get("last_success_at"),
+                "last_success_source": (
+                    "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json"
+                    if available > 0
+                    else item.get("last_success_source")
+                ),
+                "last_failure_at": health.get("observed_at") if degraded else None,
+                "last_failure_source": (
+                    "academic-door/econ-paper-monitor:data/metadata_provider_health.json"
+                    if degraded
+                    else None
+                ),
+            }
+        )
+
+    journals = owner.get("journals_monitoring") or {}
     if journals:
         item = by_id.get("journals-production-monitor")
         if item is None:

@@ -130,6 +130,21 @@ class OwnerSnapshotMergeTests(unittest.TestCase):
         self.assertIn("legitimate use observed at 2026-09-16T10:46:20+00:00", credential["status"])
         self.assertIn("econ-paper-monitor#208", credential["note"])
 
+
+        deepseek_service = next(x for x in snapshot["services"] if x["id"] == "deepseek-inference")
+        self.assertEqual(deepseek_service["lifecycle_state"], "ACTIVE")
+        self.assertEqual(deepseek_service["usefulness_status"], "PROVEN")
+        self.assertEqual(deepseek_service["last_success_at"], "2026-09-16T15:30:59+00:00")
+
+        s2_service = next(x for x in snapshot["services"] if x["id"] == "semantic-scholar")
+        self.assertEqual(s2_service["lifecycle_state"], "ACTIVE_DEGRADED")
+        self.assertEqual(s2_service["usefulness_status"], "PROVEN")
+        self.assertEqual(s2_service["last_failure_at"], "2026-09-16T15:03:26+00:00")
+
+        elsevier_service = next(x for x in snapshot["services"] if x["id"] == "elsevier-metadata")
+        self.assertEqual(elsevier_service["lifecycle_state"], "ACTIVE")
+        self.assertEqual(elsevier_service["usefulness_status"], "PROVEN")
+
         service = next(x for x in snapshot["services"] if x["id"] == "journals-production-monitor")
         self.assertEqual(service["status"], "healthy; configured_journals=49; warnings=0; failed=0; awaiting_official=7")
 
