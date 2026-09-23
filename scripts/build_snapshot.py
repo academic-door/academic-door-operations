@@ -379,6 +379,8 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
     usage_providers = usage.get("providers") or {}
 
     for provider_name, service_id in (
+        ("crossref", "crossref"),
+        ("openalex", "openalex"),
         ("semantic-scholar", "semantic-scholar"),
         ("elsevier", "elsevier-metadata"),
     ):
@@ -395,6 +397,10 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
         http_error = hp.get("http_error", 0) or 0
         skipped = hp.get("skipped", 0) or 0
         degraded = bool(rate_limited or failed or http_error or control.get("circuit_open"))
+        last_success_at = up.get("last_used_at") or health.get("observed_at")
+        usage_source = "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json" if up else None
+        health_source = "academic-door/econ-paper-monitor:data/metadata_provider_health.json"
+        source = f"{health_source}; {usage_source}" if usage_source else health_source
         item.update(
             {
                 "evidence_class": "ACTUAL",
@@ -402,19 +408,16 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
                     f"active owner runtime; available={available}; rate_limited={rate_limited}; "
                     f"failed={failed}; skipped={skipped}; circuit_open={control.get('circuit_open')}"
                 ),
-                "source": (
-                    "academic-door/econ-paper-monitor:data/metadata_provider_health.json; "
-                    "data/semantic_scholar_usage.json"
-                ),
+                "source": source,
                 "note": (
-                    f"health_observed_at={health.get('observed_at')}; usage_observed_at={usage.get('observed_at')}; "
+                    f"health_observed_at={health.get('observed_at')}; usage_observed_at={usage.get('observed_at') if up else None}; "
                     "provider account quota/billing is not invented"
                 ),
                 "lifecycle_state": "ACTIVE_DEGRADED" if degraded else "ACTIVE",
                 "usefulness_status": "PROVEN" if available > 0 else "ACTIVE_UNVERIFIED",
-                "last_success_at": up.get("last_used_at") if available > 0 else item.get("last_success_at"),
+                "last_success_at": last_success_at if available > 0 else item.get("last_success_at"),
                 "last_success_source": (
-                    "academic-door/econ-paper-monitor:data/semantic_scholar_usage.json"
+                    usage_source or health_source
                     if available > 0
                     else item.get("last_success_source")
                 ),

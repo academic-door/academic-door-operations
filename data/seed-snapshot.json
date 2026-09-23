@@ -615,6 +615,52 @@
       "last_failure_source": "provider account message: project auto-paused after inactivity",
       "cost_pointer": "costs:supabase-academic-door",
       "retirement_condition": "Before irreversible deletion, verify no owner repo/runtime dependency; any destructive account/project cleanup requires the appropriate Parent/Human decision."
+    },
+    {
+      "id": "crossref",
+      "category": "scholarly-metadata-provider",
+      "owner": "daily-door",
+      "evidence_class": "ACTUAL",
+      "status": "active owner runtime metadata source; latest owner telemetry shows successful returns without current rate limiting",
+      "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": "Public metadata provider; lifecycle is driven by owner runtime evidence rather than credential or billing records.",
+      "purpose": "Primary/fail-safe scholarly metadata and DOI recovery, including fallback coverage when publisher-direct acquisition is unavailable.",
+      "consumers": [
+        "academic-door/econ-paper-monitor"
+      ],
+      "lifecycle_state": "ACTIVE",
+      "current_role": "core metadata and fallback provider",
+      "operational_evidence_class": "OWNER_RUNTIME",
+      "usefulness_status": "PROVEN",
+      "last_success_at": "2026-09-23T12:42:50+00:00",
+      "last_success_source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "last_failure_at": null,
+      "last_failure_source": null,
+      "cost_pointer": null,
+      "retirement_condition": "Do not retire while owner source-health or publisher fallback contracts depend on Crossref; any replacement must preserve DOI/metadata recall and production release safety."
+    },
+    {
+      "id": "openalex",
+      "category": "scholarly-metadata-provider",
+      "owner": "daily-door",
+      "evidence_class": "ACTUAL",
+      "status": "active owner runtime supplemental recall source; latest owner telemetry shows successful returns without current rate limiting",
+      "source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "note": "Public metadata/recall provider; current source-health contracts use OpenAlex as supplemental recall for multiple journals.",
+      "purpose": "Supplemental scholarly metadata and recall path used when official/publisher paths are incomplete or degraded.",
+      "consumers": [
+        "academic-door/econ-paper-monitor"
+      ],
+      "lifecycle_state": "ACTIVE",
+      "current_role": "supplemental recall provider",
+      "operational_evidence_class": "OWNER_RUNTIME",
+      "usefulness_status": "PROVEN",
+      "last_success_at": "2026-09-23T12:42:50+00:00",
+      "last_success_source": "academic-door/econ-paper-monitor:data/metadata_provider_health.json",
+      "last_failure_at": null,
+      "last_failure_source": null,
+      "cost_pointer": null,
+      "retirement_condition": "Retire only after owner coverage debt and fallback contracts no longer depend on OpenAlex and replacement recall is production-accepted."
     }
   ],
   "actions": [
