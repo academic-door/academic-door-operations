@@ -16,6 +16,18 @@ COST_COVERAGE_STATUS = {
     "PROVIDER_REPORTED_FREE",
     "PROVIDER_REPORTED_QUOTA",
     "ACCOUNT_BILLING_UNKNOWN",
+    "HUMAN_REPORTED_FREE",
+    "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
+    "NOT_EVIDENCED_AS_ACTIVE",
+}
+SERVICE_LIFECYCLE = {"ACTIVE", "ACTIVE_DEGRADED", "CAPABILITY_ONLY", "NOT_EVIDENCED", "RETIRED"}
+SERVICE_OPERATIONAL_EVIDENCE = {"OWNER_RUNTIME", "PROVIDER_ACCOUNT", "HUMAN_REPORTED", "CONFIGURATION_ONLY", "UNKNOWN"}
+SERVICE_USEFULNESS = {"PROVEN", "ACTIVE_UNVERIFIED", "QUALIFY_NONE_CURRENT_PATH", "CANDIDATE_ONLY", "NOT_EVIDENCED", "RETIRED"}
+SERVICE_REQUIRED = {
+    "id", "category", "owner", "evidence_class", "status", "purpose", "consumers",
+    "lifecycle_state", "current_role", "operational_evidence_class", "usefulness_status",
+    "last_success_at", "last_success_source", "last_failure_at", "last_failure_source",
+    "cost_pointer", "retirement_condition",
 }
 COST_REQUIRED = {
     "id",
@@ -76,8 +88,32 @@ def validate(snapshot):
             errors.append(f"costs[{i}] human_action_required must be boolean")
         if item.get("human_action_required") and not item.get("human_action_reason"):
             errors.append(f"costs[{i}] human_action_reason required when human_action_required=true")
-        if item.get("evidence_class") == "UNKNOWN" and item.get("coverage_status") != "ACCOUNT_BILLING_UNKNOWN":
-            errors.append(f"costs[{i}] UNKNOWN cost must use ACCOUNT_BILLING_UNKNOWN coverage_status")
+        if item.get("evidence_class") == "UNKNOWN" and item.get("coverage_status") not in {
+            "ACCOUNT_BILLING_UNKNOWN", "HUMAN_REPORTED_FREE",
+            "CAPABILITY_ONLY_NO_SPEND_EVIDENCE", "NOT_EVIDENCED_AS_ACTIVE",
+        }:
+            errors.append(f"costs[{i}] UNKNOWN cost has unsupported non-authoritative coverage_status")
+        if item.get("coverage_status") in {
+            "HUMAN_REPORTED_FREE", "CAPABILITY_ONLY_NO_SPEND_EVIDENCE", "NOT_EVIDENCED_AS_ACTIVE",
+        } and item.get("amount") is not None:
+            errors.append(f"costs[{i}] non-authoritative non-billing state must not manufacture amount")
+
+    for i, item in enumerate(snapshot.get("services", [])):
+        missing_service = SERVICE_REQUIRED - item.keys()
+        if missing_service:
+            errors.append(f"services[{i}] missing fields: {sorted(missing_service)}")
+        if item.get("lifecycle_state") not in SERVICE_LIFECYCLE:
+            errors.append(f"services[{i}] invalid lifecycle_state: {item.get('lifecycle_state')!r}")
+        if item.get("operational_evidence_class") not in SERVICE_OPERATIONAL_EVIDENCE:
+            errors.append(f"services[{i}] invalid operational_evidence_class: {item.get('operational_evidence_class')!r}")
+        if item.get("usefulness_status") not in SERVICE_USEFULNESS:
+            errors.append(f"services[{i}] invalid usefulness_status: {item.get('usefulness_status')!r}")
+        if not item.get("purpose"):
+            errors.append(f"services[{i}] purpose must be non-empty")
+        if not isinstance(item.get("consumers"), list):
+            errors.append(f"services[{i}] consumers must be a list")
+        if not item.get("retirement_condition"):
+            errors.append(f"services[{i}] retirement_condition must be non-empty")
 
     for i, item in enumerate(snapshot.get("quotas", [])):
         if item.get("status") not in QUOTA_STATUS:

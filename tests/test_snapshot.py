@@ -39,12 +39,29 @@ class SnapshotContractTests(unittest.TestCase):
             "## Cost / usage",
             "## Quota / provider pressure",
             "## Credential metadata",
-            "## Infrastructure / recurring services",
+            "## Service lifecycle / operational assets",
             "## GitHub Actions / recurring workloads",
             "## Human Principal actions",
         ):
             self.assertIn(heading, first)
         self.assertIn("Secret values are never collected", first)
+
+    def test_service_lifecycle_registry_tracks_jina_operational_truth(self):
+        by_id = {item["id"]: item for item in self.snapshot["services"]}
+        jina = by_id["jina-reader"]
+        self.assertEqual(jina["lifecycle_state"], "ACTIVE_DEGRADED")
+        self.assertEqual(jina["usefulness_status"], "QUALIFY_NONE_CURRENT_PATH")
+        self.assertEqual(jina["last_failure_at"], "2026-09-23T11:52:15+00:00")
+        self.assertIsNone(jina["last_success_at"])
+        self.assertIn("35856336587", jina["last_failure_source"])
+        self.assertIn("Retire only after no accepted owner path references Jina", jina["retirement_condition"])
+
+        qwen = by_id["qwen-dashscope-benchmark"]
+        self.assertEqual(qwen["lifecycle_state"], "CAPABILITY_ONLY")
+        self.assertEqual(qwen["usefulness_status"], "CANDIDATE_ONLY")
+
+        domains = by_id["domains-registrar"]
+        self.assertEqual(domains["lifecycle_state"], "NOT_EVIDENCED")
 
     def test_actual_zero_bill_preserves_gross_and_discount_context(self):
         snapshot = copy.deepcopy(self.snapshot)
