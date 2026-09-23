@@ -77,6 +77,7 @@ def render(snapshot):
         f"- Provider-reported free/quota surfaces: {_surface_list(snapshot['costs'], evidence_class='PROVIDER_REPORTED')}",
         f"- Account-billing UNKNOWN residuals: {_surface_list(snapshot['costs'], coverage_status='ACCOUNT_BILLING_UNKNOWN')}",
         f"- Human-reported free surfaces: {_surface_list(snapshot['costs'], coverage_status='HUMAN_REPORTED_FREE')}",
+        f"- Human-reported no-paid-spend surfaces: {_surface_list(snapshot['costs'], coverage_status='HUMAN_REPORTED_NO_PAID_SPEND')}",
         f"- Capability-only / no-spend-evidence surfaces: {_surface_list(snapshot['costs'], coverage_status='CAPABILITY_ONLY_NO_SPEND_EVIDENCE')}",
         f"- Not-evidenced-as-active surfaces: {_surface_list(snapshot['costs'], coverage_status='NOT_EVIDENCED_AS_ACTIVE')}",
         "- Period-end projection: UNKNOWN unless an accepted provider/account or owner projection method is present; no projection is manufactured.",
