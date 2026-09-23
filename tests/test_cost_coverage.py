@@ -92,9 +92,15 @@ class CostCoverageTests(unittest.TestCase):
         self.assertEqual(by_id["firecrawl"]["authorized_paid_budget"], 0.0)
         self.assertIsNone(by_id["firecrawl"]["amount"])
 
+        allowed_unknown_states = {
+            "ACCOUNT_BILLING_UNKNOWN",
+            "HUMAN_REPORTED_FREE",
+            "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
+            "NOT_EVIDENCED_AS_ACTIVE",
+        }
         for item in snapshot["costs"]:
             if item["evidence_class"] == "UNKNOWN":
-                self.assertEqual(item["coverage_status"], "ACCOUNT_BILLING_UNKNOWN")
+                self.assertIn(item["coverage_status"], allowed_unknown_states)
                 self.assertTrue(item["next_evidence_route"])
                 self.assertIsNone(item["amount"])
 
@@ -110,9 +116,41 @@ class CostCoverageTests(unittest.TestCase):
         self.assertIn("Firecrawl", text)
         self.assertIn("Cloudflare Workers / D1 / runtime", text)
         self.assertIn("Provider-reported free/quota surfaces:", text)
+        self.assertIn("Human-reported free surfaces:", text)
+        self.assertIn("Capability-only / no-spend-evidence surfaces:", text)
+        self.assertIn("Not-evidenced-as-active surfaces:", text)
         self.assertIn("## Account evidence routes", text)
         self.assertNotIn("authoritative Cloudflare invoice/receipt/export", text)
         self.assertIn("Period-end projection: UNKNOWN", text)
+
+    def test_non_billing_surfaces_do_not_become_account_residuals(self):
+        by_id = {item["id"]: item for item in self.seed["costs"]}
+
+        self.assertEqual(
+            by_id["qwen-dashscope"]["coverage_status"],
+            "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
+        )
+        self.assertIsNone(by_id["qwen-dashscope"]["amount"])
+
+        self.assertEqual(
+            by_id["project-mailbox-163"]["coverage_status"],
+            "HUMAN_REPORTED_FREE",
+        )
+        self.assertIsNone(by_id["project-mailbox-163"]["amount"])
+        self.assertIn("Human Principal", by_id["project-mailbox-163"]["status"])
+
+        self.assertEqual(
+            by_id["domains-registrar"]["coverage_status"],
+            "NOT_EVIDENCED_AS_ACTIVE",
+        )
+        self.assertIsNone(by_id["domains-registrar"]["amount"])
+
+        text = render(self.seed)
+        account_routes = text.split("## Account evidence routes", 1)[1].split("## Quota / provider pressure", 1)[0]
+        self.assertNotIn("Qwen / DashScope / Alibaba Cloud AI", account_routes)
+        self.assertNotIn("NetEase 163 project mailbox / SMTP", account_routes)
+        self.assertNotIn("Domains / registrar renewals", account_routes)
+        self.assertIn("Jina AI provider", account_routes)
 
     def test_cloudflare_free_plan_readback_is_bounded_provider_evidence(self):
         cloudflare = next(item for item in self.seed["costs"] if item["id"] == "cloudflare")
