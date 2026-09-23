@@ -97,6 +97,7 @@ class CostCoverageTests(unittest.TestCase):
             "HUMAN_REPORTED_FREE",
             "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
             "NOT_EVIDENCED_AS_ACTIVE",
+            "HUMAN_REPORTED_NO_PAID_SPEND",
         }
         for item in snapshot["costs"]:
             if item["evidence_class"] == "UNKNOWN":
@@ -117,6 +118,7 @@ class CostCoverageTests(unittest.TestCase):
         self.assertIn("Cloudflare Workers / D1 / runtime", text)
         self.assertIn("Provider-reported free/quota surfaces:", text)
         self.assertIn("Human-reported free surfaces:", text)
+        self.assertIn("Human-reported no-paid-spend surfaces:", text)
         self.assertIn("Capability-only / no-spend-evidence surfaces:", text)
         self.assertIn("Not-evidenced-as-active surfaces:", text)
         self.assertIn("## Account evidence routes", text)
@@ -150,7 +152,15 @@ class CostCoverageTests(unittest.TestCase):
         self.assertNotIn("Qwen / DashScope / Alibaba Cloud AI", account_routes)
         self.assertNotIn("NetEase 163 project mailbox / SMTP", account_routes)
         self.assertNotIn("Domains / registrar renewals", account_routes)
-        self.assertIn("Jina AI provider", account_routes)
+        self.assertNotIn("Jina AI provider", account_routes)
+
+    def test_jina_human_reported_no_paid_spend_is_not_provider_billing(self):
+        jina = next(item for item in self.seed["costs"] if item["id"] == "jina")
+        self.assertEqual(jina["coverage_status"], "HUMAN_REPORTED_NO_PAID_SPEND")
+        self.assertEqual(jina["evidence_class"], "UNKNOWN")
+        self.assertIsNone(jina["amount"])
+        self.assertIn("no payment has ever been made", jina["status"])
+        self.assertIn("not provider-reported", jina["note"].lower())
 
     def test_cloudflare_free_plan_readback_is_bounded_provider_evidence(self):
         cloudflare = next(item for item in self.seed["costs"] if item["id"] == "cloudflare")

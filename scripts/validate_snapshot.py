@@ -19,6 +19,7 @@ COST_COVERAGE_STATUS = {
     "HUMAN_REPORTED_FREE",
     "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
     "NOT_EVIDENCED_AS_ACTIVE",
+    "HUMAN_REPORTED_NO_PAID_SPEND",
 }
 SERVICE_LIFECYCLE = {"ACTIVE", "ACTIVE_DEGRADED", "CAPABILITY_ONLY", "NOT_EVIDENCED", "RETIRED"}
 SERVICE_OPERATIONAL_EVIDENCE = {"OWNER_RUNTIME", "PROVIDER_ACCOUNT", "HUMAN_REPORTED", "CONFIGURATION_ONLY", "UNKNOWN"}
@@ -91,10 +92,12 @@ def validate(snapshot):
         if item.get("evidence_class") == "UNKNOWN" and item.get("coverage_status") not in {
             "ACCOUNT_BILLING_UNKNOWN", "HUMAN_REPORTED_FREE",
             "CAPABILITY_ONLY_NO_SPEND_EVIDENCE", "NOT_EVIDENCED_AS_ACTIVE",
+            "HUMAN_REPORTED_NO_PAID_SPEND",
         }:
             errors.append(f"costs[{i}] UNKNOWN cost has unsupported non-authoritative coverage_status")
         if item.get("coverage_status") in {
             "HUMAN_REPORTED_FREE", "CAPABILITY_ONLY_NO_SPEND_EVIDENCE", "NOT_EVIDENCED_AS_ACTIVE",
+            "HUMAN_REPORTED_NO_PAID_SPEND",
         } and item.get("amount") is not None:
             errors.append(f"costs[{i}] non-authoritative non-billing state must not manufacture amount")
 
