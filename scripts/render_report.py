@@ -76,6 +76,9 @@ def render(snapshot):
         f"- Separately labeled ESTIMATED subtotal: {_format_totals(_money_totals(snapshot['costs'], 'ESTIMATED'))}",
         f"- Provider-reported free/quota surfaces: {_surface_list(snapshot['costs'], evidence_class='PROVIDER_REPORTED')}",
         f"- Account-billing UNKNOWN residuals: {_surface_list(snapshot['costs'], coverage_status='ACCOUNT_BILLING_UNKNOWN')}",
+        f"- Human-reported free surfaces: {_surface_list(snapshot['costs'], coverage_status='HUMAN_REPORTED_FREE')}",
+        f"- Capability-only / no-spend-evidence surfaces: {_surface_list(snapshot['costs'], coverage_status='CAPABILITY_ONLY_NO_SPEND_EVIDENCE')}",
+        f"- Not-evidenced-as-active surfaces: {_surface_list(snapshot['costs'], coverage_status='NOT_EVIDENCED_AS_ACTIVE')}",
         "- Period-end projection: UNKNOWN unless an accepted provider/account or owner projection method is present; no projection is manufactured.",
         "",
         "## Cost / usage",
@@ -133,11 +136,15 @@ def render(snapshot):
             [[x["logical_name"], x["provider"], x["owner"], ", ".join(x["consumers"]), x["status"]] for x in snapshot["credentials"]],
         ),
         "",
-        "## Infrastructure / recurring services",
+        "## Service lifecycle / operational assets",
         "",
         table(
-            ["Service", "Category", "Owner", "Evidence", "Status"],
-            [[x["id"], x["category"], x["owner"], x["evidence_class"], x["status"]] for x in snapshot["services"]],
+            ["Service", "Purpose", "Owner", "Lifecycle", "Role", "Usefulness", "Last success", "Last failure", "Retirement condition"],
+            [[
+                x["id"], x["purpose"], x["owner"], x["lifecycle_state"], x["current_role"],
+                x["usefulness_status"], x.get("last_success_at") or "UNKNOWN",
+                x.get("last_failure_at") or "NONE", x["retirement_condition"]
+            ] for x in snapshot["services"]],
         ),
         "",
         "## GitHub Actions / recurring workloads",
