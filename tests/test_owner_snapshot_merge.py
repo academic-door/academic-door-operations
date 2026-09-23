@@ -40,6 +40,22 @@ class OwnerSnapshotMergeTests(unittest.TestCase):
             "daily_provider_health": {
                 "observed_at": "2026-09-16T15:03:26+00:00",
                 "providers": {
+                    "crossref": {
+                        "attempts": 150,
+                        "available": 72,
+                        "empty": 78,
+                        "failed": 0,
+                        "rate_limited": 0,
+                        "skipped": 0,
+                    },
+                    "openalex": {
+                        "attempts": 150,
+                        "available": 97,
+                        "empty": 53,
+                        "failed": 0,
+                        "rate_limited": 0,
+                        "skipped": 0,
+                    },
                     "semantic-scholar": {
                         "attempts": 150,
                         "available": 27,
