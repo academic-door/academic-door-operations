@@ -78,6 +78,12 @@ class CostCoverageTests(unittest.TestCase):
         self.assertEqual(by_id["deepseek-daily-door"]["amount"], 0.2)
         self.assertEqual(by_id["deepseek-daily-door"]["evidence_observed_at"], "2026-09-21T10:29:00Z")
 
+        self.assertEqual(by_id["cloudflare"]["evidence_class"], "PROVIDER_REPORTED")
+        self.assertEqual(by_id["cloudflare"]["coverage_status"], "PROVIDER_REPORTED_FREE")
+        self.assertEqual(by_id["cloudflare"]["amount"], 0.0)
+        self.assertIn("Workers Free", by_id["cloudflare"]["plan_state"])
+        self.assertIsNone(by_id["cloudflare"]["usage_quantity"])
+
         self.assertEqual(by_id["supabase-academic-door"]["evidence_class"], "PROVIDER_REPORTED")
         self.assertEqual(by_id["supabase-academic-door"]["coverage_status"], "PROVIDER_REPORTED_FREE")
         self.assertEqual(by_id["supabase-academic-door"]["amount"], 0.0)
@@ -103,9 +109,20 @@ class CostCoverageTests(unittest.TestCase):
         self.assertIn("Supabase", text)
         self.assertIn("Firecrawl", text)
         self.assertIn("Cloudflare Workers / D1 / runtime", text)
+        self.assertIn("Provider-reported free/quota surfaces:", text)
         self.assertIn("## Account evidence routes", text)
-        self.assertIn("authoritative Cloudflare invoice/receipt/export", text)
+        self.assertNotIn("authoritative Cloudflare invoice/receipt/export", text)
         self.assertIn("Period-end projection: UNKNOWN", text)
+
+    def test_cloudflare_free_plan_readback_is_bounded_provider_evidence(self):
+        cloudflare = next(item for item in self.seed["costs"] if item["id"] == "cloudflare")
+        self.assertEqual(cloudflare["evidence_class"], "PROVIDER_REPORTED")
+        self.assertEqual(cloudflare["coverage_status"], "PROVIDER_REPORTED_FREE")
+        self.assertEqual(cloudflare["amount"], 0.0)
+        self.assertIn("Workers Free", cloudflare["plan_state"])
+        self.assertIn("no invoices", cloudflare["plan_state"].lower())
+        self.assertIsNone(cloudflare["usage_quantity"])
+        self.assertIn("not generalized", cloudflare["note"])
 
     def test_budget_zero_is_not_billed_zero(self):
         firecrawl = next(item for item in self.seed["costs"] if item["id"] == "firecrawl")
@@ -130,8 +147,8 @@ class CostCoverageTests(unittest.TestCase):
 
     def test_unknown_cost_without_evidence_route_is_invalid(self):
         snapshot = copy.deepcopy(self.seed)
-        cloudflare = next(item for item in snapshot["costs"] if item["id"] == "cloudflare")
-        cloudflare["next_evidence_route"] = ""
+        qwen = next(item for item in snapshot["costs"] if item["id"] == "qwen-dashscope")
+        qwen["next_evidence_route"] = ""
         errors = validate(snapshot)
         self.assertTrue(any("next_evidence_route" in error for error in errors), errors)
 
