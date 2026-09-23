@@ -136,6 +136,16 @@ class OwnerSnapshotMergeTests(unittest.TestCase):
         self.assertEqual(deepseek_service["usefulness_status"], "PROVEN")
         self.assertEqual(deepseek_service["last_success_at"], "2026-09-16T15:30:59+00:00")
 
+        crossref_service = next(x for x in snapshot["services"] if x["id"] == "crossref")
+        self.assertEqual(crossref_service["lifecycle_state"], "ACTIVE")
+        self.assertEqual(crossref_service["usefulness_status"], "PROVEN")
+        self.assertEqual(crossref_service["last_success_at"], "2026-09-16T15:03:26+00:00")
+
+        openalex_service = next(x for x in snapshot["services"] if x["id"] == "openalex")
+        self.assertEqual(openalex_service["lifecycle_state"], "ACTIVE")
+        self.assertEqual(openalex_service["usefulness_status"], "PROVEN")
+        self.assertEqual(openalex_service["last_success_at"], "2026-09-16T15:03:26+00:00")
+
         s2_service = next(x for x in snapshot["services"] if x["id"] == "semantic-scholar")
         self.assertEqual(s2_service["lifecycle_state"], "ACTIVE_DEGRADED")
         self.assertEqual(s2_service["usefulness_status"], "PROVEN")
