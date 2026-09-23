@@ -165,7 +165,8 @@
             "ACCOUNT_BILLING_UNKNOWN",
             "HUMAN_REPORTED_FREE",
             "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
-            "NOT_EVIDENCED_AS_ACTIVE"
+            "NOT_EVIDENCED_AS_ACTIVE",
+            "HUMAN_REPORTED_NO_PAID_SPEND"
           ]
         },
         "evidence_observed_at": {
