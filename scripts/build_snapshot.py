@@ -352,6 +352,20 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
                 "id": "journals-production-monitor",
                 "category": "product-runtime-health",
                 "owner": "journal-system",
+                "purpose": "Bounded production health summary for the Journal System.",
+                "consumers": ["academic-door/journals"],
+                "lifecycle_state": "ACTIVE",
+                "current_role": "owner production health monitor",
+                "operational_evidence_class": "OWNER_RUNTIME",
+                "usefulness_status": "PROVEN",
+                "last_success_at": None,
+                "last_success_source": None,
+                "last_failure_at": None,
+                "last_failure_source": None,
+                "cost_pointer": None,
+                "retirement_condition": (
+                    "Retire only if the Journal System replaces this monitoring contract with an accepted successor."
+                ),
             }
             result.append(item)
             by_id[item["id"]] = item
@@ -366,6 +380,22 @@ def _merge_services(seed_services: list[dict], billing: dict, owner: dict | None
                 ),
                 "source": "academic-door/journals:data:public/api/v1/monitoring.json",
                 "note": f"observed_at={journals.get('observed_at')}; schedule={journals.get('schedule')}",
+                "last_success_at": (
+                    journals.get("observed_at") if journals.get("status") == "healthy" else item.get("last_success_at")
+                ),
+                "last_success_source": (
+                    "academic-door/journals:data:public/api/v1/monitoring.json"
+                    if journals.get("status") == "healthy"
+                    else item.get("last_success_source")
+                ),
+                "last_failure_at": (
+                    journals.get("observed_at") if journals.get("status") not in (None, "healthy") else None
+                ),
+                "last_failure_source": (
+                    "academic-door/journals:data:public/api/v1/monitoring.json"
+                    if journals.get("status") not in (None, "healthy")
+                    else None
+                ),
             }
         )
     return result
