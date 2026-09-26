@@ -403,7 +403,10 @@
             "ACTIVE_DEGRADED",
             "CAPABILITY_ONLY",
             "NOT_EVIDENCED",
-            "RETIRED"
+            "RETIRED",
+            "RETIRING",
+            "RETIRED_PENDING_ACCOUNT_CLEANUP",
+            "CONDITIONAL"
           ]
         },
         "current_role": {
@@ -426,7 +429,8 @@
             "QUALIFY_NONE_CURRENT_PATH",
             "CANDIDATE_ONLY",
             "NOT_EVIDENCED",
-            "RETIRED"
+            "RETIRED",
+            "RETIRE_BY_DEFAULT_PENDING_DAILY_PROVENANCE_GATE"
           ]
         },
         "last_success_at": {
