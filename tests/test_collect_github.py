@@ -12,12 +12,14 @@ class FakeApi:
         mapping = {
             "/installation/repositories": [
                 {"name": "repo-a", "full_name": "academic-door/repo-a", "private": True, "archived": False, "default_branch": "main"},
-                {"name": "repo-b", "full_name": "academic-door/repo-b", "private": True, "archived": False, "default_branch": "main"},
+                {"name": "repo-b", "full_name": "academic-door/repo-b", "private": False, "archived": False, "default_branch": "main"},
             ],
             "/repos/academic-door/repo-a/actions/workflows": [
                 {"id": 1, "name": "Fast", "path": ".github/workflows/fast.yml", "state": "active"}
             ],
-            "/repos/academic-door/repo-b/actions/workflows": [],
+            "/repos/academic-door/repo-b/actions/workflows": [
+                {"id": 2, "name": "Public CI", "path": ".github/workflows/public.yml", "state": "active"}
+            ],
             "/repos/academic-door/repo-a/actions/runs": [
                 {
                     "workflow_id": 1,
@@ -34,7 +36,15 @@ class FakeApi:
                     "updated_at": "2026-09-16T11:02:00Z",
                 },
             ],
-            "/repos/academic-door/repo-b/actions/runs": [],
+            "/repos/academic-door/repo-b/actions/runs": [
+                {
+                    "workflow_id": 2,
+                    "name": "Public CI",
+                    "conclusion": "success",
+                    "run_started_at": "2026-09-16T12:00:00Z",
+                    "updated_at": "2026-09-16T12:01:00Z",
+                }
+            ],
             "/orgs/academic-door/actions/secrets": [
                 {"name": "ORG_KEY", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-02-01T00:00:00Z", "visibility": "selected"}
             ],
@@ -64,8 +74,9 @@ class CollectGitHubTests(unittest.TestCase):
         result = collect_github(FakeApi(), "academic-door", "2026-09-16T15:00:00Z", run_window_days=14)
 
         self.assertEqual([r["full_name"] for r in result["repositories"]], ["academic-door/repo-a", "academic-door/repo-b"])
-        self.assertEqual(len(result["actions"]), 1)
-        action = result["actions"][0]
+        self.assertEqual(len(result["actions"]), 2)
+        action = next(item for item in result["actions"] if item["repository"] == "academic-door/repo-a")
+        public_action = next(item for item in result["actions"] if item["repository"] == "academic-door/repo-b")
         self.assertEqual(action["repository"], "academic-door/repo-a")
         self.assertEqual(action["workflow_name"], "Fast")
         self.assertEqual(action["run_count"], 2)
@@ -73,6 +84,10 @@ class CollectGitHubTests(unittest.TestCase):
         self.assertEqual(action["failure_count"], 1)
         self.assertEqual(action["estimated_wall_minutes"], 5.0)
         self.assertEqual(action["evidence_class"], "ESTIMATED")
+        self.assertEqual(action["repository_visibility"], "PRIVATE")
+        self.assertEqual(action["billing_scarcity_class"], "PRIVATE_INCLUDED_MINUTES")
+        self.assertEqual(public_action["repository_visibility"], "PUBLIC")
+        self.assertEqual(public_action["billing_scarcity_class"], "PUBLIC_STANDARD_RUNNER_FREE_ELIGIBLE")
 
         self.assertEqual(result["billing"]["evidence_class"], "ACTUAL")
         self.assertEqual(result["billing"]["net_amount"], 0.6)
