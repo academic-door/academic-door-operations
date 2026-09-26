@@ -25,6 +25,8 @@ class BuildSnapshotTests(unittest.TestCase):
             "actions": [
                 {
                     "repository": "academic-door/econ-paper-monitor",
+                    "repository_visibility": "PRIVATE",
+                    "billing_scarcity_class": "PRIVATE_INCLUDED_MINUTES",
                     "workflow_id": 10,
                     "workflow_name": "Update Paper Monitor",
                     "workflow_path": ".github/workflows/update.yml",
@@ -81,6 +83,8 @@ class BuildSnapshotTests(unittest.TestCase):
         self.assertEqual(action["run_count"], 20)
         self.assertEqual(action["estimated_minutes"], 44.5)
         self.assertEqual(action["window_days"], 14)
+        self.assertEqual(action["repository_visibility"], "PRIVATE")
+        self.assertEqual(action["billing_scarcity_class"], "PRIVATE_INCLUDED_MINUTES")
 
     def test_unknown_billing_remains_unknown_not_zero(self):
         self.github["billing"] = {

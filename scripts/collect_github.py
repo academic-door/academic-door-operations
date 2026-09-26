@@ -144,6 +144,12 @@ def collect_github(api: GitHubApi, org: str, observed_at: str, run_window_days: 
                 actions.append(
                     {
                         "repository": full_name,
+                        "repository_visibility": "PRIVATE" if bool(repo.get("private")) else "PUBLIC",
+                        "billing_scarcity_class": (
+                            "PRIVATE_INCLUDED_MINUTES"
+                            if bool(repo.get("private"))
+                            else "PUBLIC_STANDARD_RUNNER_FREE_ELIGIBLE"
+                        ),
                         "workflow_id": workflow.get("id"),
                         "workflow_name": workflow.get("name"),
                         "workflow_path": workflow.get("path"),

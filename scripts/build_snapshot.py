@@ -148,11 +148,17 @@ def _actions(entries: list[dict]) -> list[dict]:
         result.append(
             {
                 "repository": entry.get("repository"),
+                "repository_visibility": entry.get("repository_visibility") or "UNKNOWN",
+                "billing_scarcity_class": entry.get("billing_scarcity_class") or "UNKNOWN",
                 "workflow_class": entry.get("workflow_name") or entry.get("workflow_path") or "unknown-workflow",
                 "evidence_class": entry.get("evidence_class", "ESTIMATED"),
                 "status": f"{runs} runs in {entry.get('window_days')}d; failures={failures}",
                 "source": "GitHub Actions workflow/run REST evidence",
-                "note": "Estimated minutes are workflow wall-clock duration, not authoritative billed runner minutes.",
+                "note": (
+                    "Estimated minutes are workflow wall-clock duration, not authoritative billed runner minutes. "
+                    "PUBLIC_STANDARD_RUNNER_FREE_ELIGIBLE means the repository is public and therefore eligible for free "
+                    "standard GitHub-hosted runner minutes; larger/special runners and storage are separate billing surfaces."
+                ),
                 "run_count": runs,
                 "estimated_minutes": entry.get("estimated_wall_minutes"),
                 "window_days": entry.get("window_days"),
