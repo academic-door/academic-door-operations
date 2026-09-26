@@ -440,23 +440,23 @@
       "category": "read-only-web-acquisition-fallback",
       "owner": "daily-door",
       "evidence_class": "UNKNOWN",
-      "status": "configured and exercised; current Springer production qualification failed 0/11 and fell back safely to Crossref/OpenAlex",
-      "source": "academic-door/econ-paper-monitor#307 comment 5794661320",
-      "note": "Do not generalize the Springer QUALIFY_NONE result into a claim that Jina is useless for every existing/future owner path.",
+      "status": "Parent staged-retirement decision active: Springer and Taylor & Francis Jina paths retire now; remaining Daily Jina references retire by default pending one bounded owner provenance qualification",
+      "source": "academic-door/academic-door-main-control#65 comment 5847236432; academic-door/academic-door-operations#20; academic-door/econ-paper-monitor#339",
+      "note": "Do not claim full retirement before Daily owner #339 acceptance. Human Principal reports no payment has ever been made for Jina; account/credential cleanup remains a separate Parent/Human action after code retirement.",
       "purpose": "Read-only webpage/text-mirror fallback when shared CI cannot reliably read publisher pages directly.",
       "consumers": [
         "academic-door/econ-paper-monitor publisher acquisition"
       ],
-      "lifecycle_state": "ACTIVE_DEGRADED",
-      "current_role": "publisher acquisition fallback",
+      "lifecycle_state": "RETIRING",
+      "current_role": "staged retirement; remaining Daily references pending bounded transport-provenance qualification",
       "operational_evidence_class": "OWNER_RUNTIME",
-      "usefulness_status": "QUALIFY_NONE_CURRENT_PATH",
+      "usefulness_status": "RETIRE_BY_DEFAULT_PENDING_DAILY_PROVENANCE_GATE",
       "last_success_at": null,
       "last_success_source": null,
       "last_failure_at": "2026-09-23T11:52:15+00:00",
       "last_failure_source": "academic-door/econ-paper-monitor#307; production run 35856336587",
       "cost_pointer": "costs:jina",
-      "retirement_condition": "Retire only after no accepted owner path references Jina and replacement/recall coverage is production-accepted; otherwise keep degraded/conditional rather than silently deleting the capability."
+      "retirement_condition": "After econ-paper-monitor#339 production acceptance: if no exact current Jina-supplied production path survives, transition to RETIRED_PENDING_ACCOUNT_CLEANUP; if an exact family/path proves unique current Jina value, transition to CONDITIONAL scoped only to that proven route."
     },
     {
       "id": "qwen-dashscope-benchmark",
