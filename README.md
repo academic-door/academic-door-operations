@@ -2,19 +2,17 @@
 
 Public-safe Operations observability executor for Academic Door.
 
-Canonical authority remains the private governance repository:
-- checkpoint: `academic-door/academic-door-main-control#65`
-- policy: `governance/OPERATIONS_OBSERVATORY.md`
+Canonical authority remains in Academic Door's private governance surface. This public repository intentionally does not publish private governance repository names, private issue/PR pointers, or private evidence payloads.
 
-Owner: `① Academic Door | 总控`
+Owner: Academic Door Parent governance.
 
 ## Public-safe contract
 
 This repository is intentionally public. It may execute read-only collection and publish a **sanitized aggregate** only.
 
-The persistent public surface MUST NOT contain:
+The persistent public output surface MUST NOT contain:
 
-- credential logical names or credential inventory;
+- discovered credential inventory or logical names from other systems;
 - private repository identifiers;
 - private issue / pull-request pointers;
 - Human account facts;
@@ -24,7 +22,7 @@ The persistent public surface MUST NOT contain:
 
 Raw GitHub/account evidence may exist only transiently inside the GitHub Actions runner workspace and is never uploaded as an artifact.
 
-Source systems remain authoritative: provider accounts, product owner runtimes, and the private canonical governance repository. This public repository is not a secret manager, account ledger, scheduler, broker, queue, cache, or product control plane.
+Source systems remain authoritative: provider accounts, product owner runtimes, and private canonical governance. This public repository is not a secret manager, account ledger, scheduler, broker, queue, cache, or product control plane.
 
 ## Public persistent outputs
 
@@ -54,14 +52,9 @@ The owner-telemetry collector reads bounded public Academic Door evidence and ma
 
 ## GitHub App
 
-The workflow currently mints a short-lived read-only GitHub App installation token using:
+The workflow mints a short-lived read-only GitHub App installation token using one repository variable and one repository secret referenced by the workflow. Their values are never emitted.
 
-- repository variable `OPS_APP_CLIENT_ID`;
-- repository secret `OPS_APP_PRIVATE_KEY`.
-
-Secret values are never emitted.
-
-The public-safe implementation no longer calls GitHub Actions secret-metadata endpoints. A later separately approved account-permission step may remove now-unneeded `Secrets: Read` permissions from the GitHub App after production acceptance.
+The public-safe implementation no longer calls GitHub Actions secret-metadata endpoints. A later separately approved account-permission step may remove now-unneeded secret-metadata read permissions from the GitHub App after production acceptance.
 
 ## Lifecycle example
 
