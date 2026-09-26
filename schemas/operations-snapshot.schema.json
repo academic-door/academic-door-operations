@@ -533,6 +533,20 @@
             "integer",
             "null"
           ]
+        },
+        "repository_visibility": {
+          "enum": [
+            "PUBLIC",
+            "PRIVATE",
+            "UNKNOWN"
+          ]
+        },
+        "billing_scarcity_class": {
+          "enum": [
+            "PUBLIC_STANDARD_RUNNER_FREE_ELIGIBLE",
+            "PRIVATE_INCLUDED_MINUTES",
+            "UNKNOWN"
+          ]
         }
       }
     }
