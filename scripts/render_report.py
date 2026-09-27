@@ -1,177 +1,158 @@
 #!/usr/bin/env python3
+"""Render the public-safe Academic Door Operations report."""
+
 import json
 import sys
 from pathlib import Path
 
 
-def value(v):
-    return "UNKNOWN" if v is None else str(v)
-
-
-def table(headers, rows):
-    out = ["| " + " | ".join(headers) + " |", "|" + "|".join(["---"] * len(headers)) + "|"]
-    out.extend("| " + " | ".join(str(cell).replace("\n", " ") for cell in row) + " |" for row in rows)
+def _table(headers, rows):
+    out = [
+        "| " + " | ".join(headers) + " |",
+        "|" + "|".join(["---"] * len(headers)) + "|",
+    ]
+    out.extend(
+        "| " + " | ".join(str(cell).replace("\n", " ") for cell in row) + " |"
+        for row in rows
+    )
     return "\n".join(out)
 
 
-def _cost_value(item, field):
-    raw = item.get(field)
-    if raw is None:
-        return "UNKNOWN"
-    currency = item.get("currency")
-    return f"{raw} {currency}" if currency else str(raw)
-
-
-def _usage_value(item):
-    summary = item.get("usage_summary")
-    if summary:
-        return summary
-    quantity = item.get("usage_quantity")
-    unit = item.get("usage_unit")
-    if quantity is None:
-        return "UNKNOWN"
-    return f"{quantity} {unit or ''}".strip()
-
-
-def _money_totals(costs, evidence_class):
-    totals = {}
-    for item in costs:
-        if item.get("evidence_class") != evidence_class:
-            continue
-        amount = item.get("amount")
-        if not isinstance(amount, (int, float)):
-            continue
-        currency = item.get("currency") or "currency-not-exposed"
-        totals[currency] = totals.get(currency, 0.0) + amount
-    return totals
-
-
-def _format_totals(totals):
-    if not totals:
-        return "NONE"
-    return "; ".join(f"{amount} {currency}" for currency, amount in sorted(totals.items()))
-
-
-def _surface_list(costs, *, evidence_class=None, coverage_status=None):
-    values = []
-    for item in costs:
-        if evidence_class is not None and item.get("evidence_class") != evidence_class:
-            continue
-        if coverage_status is not None and item.get("coverage_status") != coverage_status:
-            continue
-        values.append(item.get("service") or item.get("id"))
-    return ", ".join(values) if values else "NONE"
-
-
-def render(snapshot):
+def render(snapshot: dict) -> str:
+    github = snapshot["billing"]["github_actions"]
     lines = [
-        "# Academic Door Operations — latest snapshot",
+        "# Academic Door Operations — public-safe snapshot",
         "",
-        f"Observed at: `{snapshot['observed_at']}`",
-        f"Scope: `{snapshot['scope']}`",
+        f"Observed at: `{snapshot.get('observed_at') or 'UNKNOWN'}`",
         "",
-        "## Cost coverage summary",
+        "This report is a deliberately sanitized public observability surface. "
+        "Private repository identifiers, credential metadata, private account facts, "
+        "and private owner pointers are not published here.",
         "",
-        f"- Known ACTUAL billed subtotal: {_format_totals(_money_totals(snapshot['costs'], 'ACTUAL'))}",
-        f"- Separately labeled ESTIMATED subtotal: {_format_totals(_money_totals(snapshot['costs'], 'ESTIMATED'))}",
-        f"- Provider-reported free/quota surfaces: {_surface_list(snapshot['costs'], evidence_class='PROVIDER_REPORTED')}",
-        f"- Account-billing UNKNOWN residuals: {_surface_list(snapshot['costs'], coverage_status='ACCOUNT_BILLING_UNKNOWN')}",
-        f"- Human-reported free surfaces: {_surface_list(snapshot['costs'], coverage_status='HUMAN_REPORTED_FREE')}",
-        f"- Human-reported no-paid-spend surfaces: {_surface_list(snapshot['costs'], coverage_status='HUMAN_REPORTED_NO_PAID_SPEND')}",
-        f"- Capability-only / no-spend-evidence surfaces: {_surface_list(snapshot['costs'], coverage_status='CAPABILITY_ONLY_NO_SPEND_EVIDENCE')}",
-        f"- Not-evidenced-as-active surfaces: {_surface_list(snapshot['costs'], coverage_status='NOT_EVIDENCED_AS_ACTIVE')}",
-        "- Period-end projection: UNKNOWN unless an accepted provider/account or owner projection method is present; no projection is manufactured.",
+        "## Public-safe billing",
         "",
-        "## Cost / usage",
+        f"- GitHub Actions billable state: **{github['billable_state']}** "
+        f"({github['evidence_class']})",
         "",
-        table(
-            ["Service", "Owner", "Evidence", "Coverage", "Net billable", "Gross", "Discount", "Usage / quota", "Evidence observed", "Status"],
-            [
-                [
-                    x["service"],
-                    x["owner"],
-                    x["evidence_class"],
-                    x.get("coverage_status", "UNKNOWN"),
-                    _cost_value(x, "amount"),
-                    _cost_value(x, "gross_amount"),
-                    _cost_value(x, "discount_amount"),
-                    x.get("included_quota") or _usage_value(x),
-                    x.get("evidence_observed_at") or "UNKNOWN",
-                    x["status"],
-                ]
-                for x in snapshot["costs"]
-            ],
-        ),
-        "",
-        "## Account evidence routes",
-        "",
-        table(
-            ["Service", "Current evidence", "Next evidence route", "Human action"],
-            [
-                [
-                    x["service"],
-                    x["evidence_class"],
-                    x.get("next_evidence_route") or "UNKNOWN",
-                    (
-                        "REQUIRED — " + (x.get("human_action_reason") or "provider/account activation required")
-                        if x.get("human_action_required")
-                        else "NONE"
-                    ),
-                ]
-                for x in snapshot["costs"]
-                if x.get("coverage_status") == "ACCOUNT_BILLING_UNKNOWN"
-            ],
-        ),
-        "",
-        "## Quota / provider pressure",
-        "",
-        table(
-            ["Provider", "Owner", "Evidence", "Remaining / Limit", "Status"],
-            [[x["provider"], x["owner"], x["evidence_class"], f"{value(x.get('remaining'))} / {value(x.get('limit'))}", x["status"]] for x in snapshot["quotas"]],
-        ),
-        "",
-        "## Credential metadata",
-        "",
-        table(
-            ["Logical credential", "Provider", "Owner", "Consumers", "Status"],
-            [[x["logical_name"], x["provider"], x["owner"], ", ".join(x["consumers"]), x["status"]] for x in snapshot["credentials"]],
-        ),
-        "",
-        "## Service lifecycle / operational assets",
-        "",
-        table(
-            ["Service", "Purpose", "Owner", "Lifecycle", "Role", "Usefulness", "Last success", "Last failure", "Retirement condition"],
-            [[
-                x["id"], x["purpose"], x["owner"], x["lifecycle_state"], x["current_role"],
-                x["usefulness_status"], x.get("last_success_at") or "UNKNOWN",
-                x.get("last_failure_at") or "NONE", x["retirement_condition"]
-            ] for x in snapshot["services"]],
-        ),
-        "",
-        "## GitHub Actions / recurring workloads",
-        "",
-        table(
-            ["Repository", "Class", "Evidence", "Status"],
-            [[x["repository"], x["workflow_class"], x["evidence_class"], x["status"]] for x in snapshot["actions"]],
-        ),
-        "",
-        "## Material alerts",
+        "## Public estimated costs",
         "",
     ]
 
+    costs = snapshot.get("costs", [])
+    if costs:
+        lines.append(
+            _table(
+                ["Service", "Evidence", "Amount", "Period", "Observed"],
+                [
+                    [
+                        item["service"],
+                        item["evidence_class"],
+                        f"{item['amount']} {item['currency']}",
+                        item["period"],
+                        item.get("observed_at") or "UNKNOWN",
+                    ]
+                    for item in costs
+                ],
+            )
+        )
+    else:
+        lines.append("- NONE")
+
+    lines.extend(["", "## Public provider health", ""])
+    health = snapshot.get("provider_health", [])
+    if health:
+        lines.append(
+            _table(
+                [
+                    "Provider",
+                    "Status",
+                    "Attempts",
+                    "Available",
+                    "Failed",
+                    "Rate limited",
+                    "Skipped",
+                    "Observed",
+                ],
+                [
+                    [
+                        item["provider"],
+                        item["status"],
+                        item["attempts"],
+                        item["available"],
+                        item["failed"],
+                        item["rate_limited"],
+                        item["skipped"],
+                        item.get("observed_at") or "UNKNOWN",
+                    ]
+                    for item in health
+                ],
+            )
+        )
+    else:
+        lines.append("- NONE")
+
+    lines.extend(["", "## Public service lifecycle", ""])
+    lines.append(
+        _table(
+            [
+                "Service",
+                "Owner",
+                "Lifecycle",
+                "Usefulness",
+                "Status",
+                "Last success",
+                "Last failure",
+            ],
+            [
+                [
+                    item["id"],
+                    item["owner"],
+                    item["lifecycle_state"],
+                    item["usefulness_status"],
+                    item["status"],
+                    item.get("last_success_at") or "UNKNOWN",
+                    item.get("last_failure_at") or "NONE",
+                ]
+                for item in snapshot.get("services", [])
+            ],
+        )
+    )
+
+    lines.extend(["", "## GitHub Actions aggregate", ""])
+    actions = snapshot["actions"]
+    lines.append(f"- Observation window: {actions['window_days']} days")
+    lines.append(
+        _table(
+            [
+                "Scarcity class",
+                "Repositories",
+                "Workflows with runs",
+                "Runs",
+                "Failures",
+                "Est. wall min",
+            ],
+            [
+                [
+                    item["class"],
+                    item["repositories_observed"],
+                    item["workflows_with_runs"],
+                    item["run_count"],
+                    item["failure_count"],
+                    item["estimated_wall_minutes"],
+                ]
+                for item in actions["classes"]
+            ],
+        )
+    )
+
+    lines.extend(["", "## Material alerts", ""])
     alerts = snapshot.get("alerts", [])
     if alerts:
         lines.append(
-            table(
-                ["Condition", "Severity", "Evidence", "Summary", "Source"],
+            _table(
+                ["Condition", "Severity", "Summary"],
                 [
-                    [
-                        item["condition"],
-                        item["severity"],
-                        item["evidence_class"],
-                        item["summary"],
-                        item["source"],
-                    ]
+                    [item["condition"], item["severity"], item["summary"]]
                     for item in alerts
                 ],
             )
@@ -179,21 +160,31 @@ def render(snapshot):
     else:
         lines.append("- NONE")
 
-    lines.extend(["", "## Human Principal actions", ""])
-    if snapshot["human_actions"]:
-        lines.extend(f"- {item}" for item in snapshot["human_actions"])
+    lines.extend(["", "## Human actions", ""])
+    human_actions = snapshot.get("human_actions", [])
+    if human_actions:
+        lines.extend(f"- {item}" for item in human_actions)
     else:
         lines.append("- NONE")
-    lines.extend(["", "> Secret values are never collected or displayed by this repository.", ""])
+
+    lines.extend(
+        [
+            "",
+            "> Public-safe contract: raw account, credential, private-repository, "
+            "and private-owner evidence is not persisted in this report.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
-def main(src, dst=None):
+def main(src: str, dst: str | None = None) -> None:
     snapshot = json.loads(Path(src).read_text(encoding="utf-8"))
     output = render(snapshot)
     if dst:
-        Path(dst).parent.mkdir(parents=True, exist_ok=True)
-        Path(dst).write_text(output, encoding="utf-8")
+        path = Path(dst)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(output, encoding="utf-8")
     else:
         print(output, end="")
 

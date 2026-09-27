@@ -1,544 +1,131 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://academic-door/operations-snapshot.schema.json",
-  "title": "Academic Door Operations Snapshot",
+  "title": "Academic Door Operations public-safe snapshot",
   "type": "object",
+  "additionalProperties": false,
   "required": [
     "schema_version",
     "observed_at",
     "scope",
+    "billing",
     "costs",
-    "quotas",
-    "credentials",
+    "provider_health",
     "services",
     "actions",
+    "alerts",
     "human_actions"
   ],
   "properties": {
-    "schema_version": {
-      "const": 1
-    },
-    "observed_at": {
-      "type": "string"
-    },
-    "scope": {
-      "const": "ACADEMIC_DOOR_WIDE_TOPOLOGY_DYNAMIC"
+    "schema_version": { "const": 1 },
+    "observed_at": { "type": ["string", "null"] },
+    "scope": { "const": "ACADEMIC_DOOR_PUBLIC_SAFE" },
+    "billing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_actions"],
+      "properties": {
+        "github_actions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence_class", "billable_state"],
+          "properties": {
+            "evidence_class": { "enum": ["ACTUAL", "UNKNOWN"] },
+            "billable_state": { "enum": ["ZERO", "POSITIVE", "UNKNOWN"] }
+          }
+        }
+      }
     },
     "costs": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/cost"
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["service", "evidence_class", "amount", "currency", "period", "observed_at"],
+        "properties": {
+          "service": { "type": "string" },
+          "evidence_class": { "const": "ESTIMATED" },
+          "amount": { "type": "number" },
+          "currency": { "type": "string" },
+          "period": { "const": "CURRENT_MONTH" },
+          "observed_at": { "type": ["string", "null"] }
+        }
       }
     },
-    "quotas": {
+    "provider_health": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/quota"
-      }
-    },
-    "credentials": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/credential"
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["provider", "status", "observed_at", "attempts", "available", "failed", "rate_limited", "skipped"],
+        "properties": {
+          "provider": { "type": "string" },
+          "status": { "enum": ["HEALTHY", "WATCH", "PRESSURED", "UNKNOWN"] },
+          "observed_at": { "type": ["string", "null"] },
+          "attempts": { "type": "integer", "minimum": 0 },
+          "available": { "type": "integer", "minimum": 0 },
+          "failed": { "type": "integer", "minimum": 0 },
+          "rate_limited": { "type": "integer", "minimum": 0 },
+          "skipped": { "type": "integer", "minimum": 0 }
+        }
       }
     },
     "services": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/service"
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "owner", "lifecycle_state", "usefulness_status", "status", "last_success_at", "last_failure_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "owner": { "type": "string" },
+          "lifecycle_state": { "type": "string" },
+          "usefulness_status": { "type": "string" },
+          "status": { "type": "string" },
+          "last_success_at": { "type": ["string", "null"] },
+          "last_failure_at": { "type": ["string", "null"] }
+        }
       }
     },
     "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["window_days", "classes"],
+      "properties": {
+        "window_days": { "type": "integer", "minimum": 0 },
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["class", "repositories_observed", "workflows_with_runs", "run_count", "failure_count", "estimated_wall_minutes"],
+            "properties": {
+              "class": { "enum": ["PUBLIC_STANDARD_RUNNER_FREE_ELIGIBLE", "PRIVATE_INCLUDED_MINUTES"] },
+              "repositories_observed": { "type": "integer", "minimum": 0 },
+              "workflows_with_runs": { "type": "integer", "minimum": 0 },
+              "run_count": { "type": "integer", "minimum": 0 },
+              "failure_count": { "type": "integer", "minimum": 0 },
+              "estimated_wall_minutes": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "alerts": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/action"
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["condition", "severity", "summary"],
+        "properties": {
+          "condition": { "type": "string" },
+          "severity": { "type": "string" },
+          "summary": { "type": "string" }
+        }
       }
     },
     "human_actions": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
-    }
-  },
-  "$defs": {
-    "evidence": {
-      "enum": [
-        "ACTUAL",
-        "PROVIDER_REPORTED",
-        "ESTIMATED",
-        "UNKNOWN"
-      ]
-    },
-    "cost": {
-      "type": "object",
-      "required": [
-        "id",
-        "service",
-        "owner",
-        "evidence_class",
-        "coverage_status",
-        "status",
-        "evidence_observed_at",
-        "next_evidence_route",
-        "human_action_required"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "service": {
-          "type": "string"
-        },
-        "owner": {
-          "type": "string"
-        },
-        "consumer": {
-          "type": "string"
-        },
-        "evidence_class": {
-          "$ref": "#/$defs/evidence"
-        },
-        "amount": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "currency": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "gross_amount": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "discount_amount": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "usage_quantity": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "usage_unit": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "usage_summary": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "status": {
-          "type": "string"
-        },
-        "source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "note": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "coverage_status": {
-          "enum": [
-            "ACTUAL_BILLED",
-            "ESTIMATED_USAGE",
-            "PROVIDER_REPORTED_FREE",
-            "PROVIDER_REPORTED_QUOTA",
-            "ACCOUNT_BILLING_UNKNOWN",
-            "HUMAN_REPORTED_FREE",
-            "CAPABILITY_ONLY_NO_SPEND_EVIDENCE",
-            "NOT_EVIDENCED_AS_ACTIVE",
-            "HUMAN_REPORTED_NO_PAID_SPEND"
-          ]
-        },
-        "evidence_observed_at": {
-          "type": "string"
-        },
-        "plan_state": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "included_quota": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "authorized_paid_budget": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "authorized_paid_budget_currency": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "next_evidence_route": {
-          "type": "string",
-          "minLength": 1
-        },
-        "human_action_required": {
-          "type": "boolean"
-        },
-        "human_action_reason": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
-    "quota": {
-      "type": "object",
-      "required": [
-        "id",
-        "provider",
-        "owner",
-        "evidence_class",
-        "status"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "provider": {
-          "type": "string"
-        },
-        "owner": {
-          "type": "string"
-        },
-        "evidence_class": {
-          "$ref": "#/$defs/evidence"
-        },
-        "limit": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "remaining": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "status": {
-          "enum": [
-            "HEALTHY",
-            "WATCH",
-            "PRESSURED",
-            "EXHAUSTED",
-            "UNKNOWN"
-          ]
-        },
-        "source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "note": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
-    "credential": {
-      "type": "object",
-      "required": [
-        "logical_name",
-        "provider",
-        "owner",
-        "consumers",
-        "secret_value_policy",
-        "status"
-      ],
-      "properties": {
-        "logical_name": {
-          "type": "string"
-        },
-        "provider": {
-          "type": "string"
-        },
-        "owner": {
-          "type": "string"
-        },
-        "consumers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "secret_value_policy": {
-          "const": "NEVER_COLLECT"
-        },
-        "status": {
-          "type": "string"
-        },
-        "last_legitimate_use_source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "created_at": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "updated_at": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "storage_scope": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "visibility": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "note": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
-    "service": {
-      "type": "object",
-      "required": [
-        "id",
-        "category",
-        "owner",
-        "evidence_class",
-        "status",
-        "purpose",
-        "consumers",
-        "lifecycle_state",
-        "current_role",
-        "operational_evidence_class",
-        "usefulness_status",
-        "last_success_at",
-        "last_success_source",
-        "last_failure_at",
-        "last_failure_source",
-        "cost_pointer",
-        "retirement_condition"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "category": {
-          "type": "string"
-        },
-        "owner": {
-          "type": "string"
-        },
-        "evidence_class": {
-          "$ref": "#/$defs/evidence"
-        },
-        "status": {
-          "type": "string"
-        },
-        "source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "note": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "purpose": {
-          "type": "string",
-          "minLength": 1
-        },
-        "consumers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "lifecycle_state": {
-          "enum": [
-            "ACTIVE",
-            "ACTIVE_DEGRADED",
-            "CAPABILITY_ONLY",
-            "NOT_EVIDENCED",
-            "RETIRED",
-            "RETIRING",
-            "RETIRED_PENDING_ACCOUNT_CLEANUP",
-            "CONDITIONAL"
-          ]
-        },
-        "current_role": {
-          "type": "string",
-          "minLength": 1
-        },
-        "operational_evidence_class": {
-          "enum": [
-            "OWNER_RUNTIME",
-            "PROVIDER_ACCOUNT",
-            "HUMAN_REPORTED",
-            "CONFIGURATION_ONLY",
-            "UNKNOWN"
-          ]
-        },
-        "usefulness_status": {
-          "enum": [
-            "PROVEN",
-            "ACTIVE_UNVERIFIED",
-            "QUALIFY_NONE_CURRENT_PATH",
-            "CANDIDATE_ONLY",
-            "NOT_EVIDENCED",
-            "RETIRED",
-            "RETIRE_BY_DEFAULT_PENDING_DAILY_PROVENANCE_GATE"
-          ]
-        },
-        "last_success_at": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "last_success_source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "last_failure_at": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "last_failure_source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "cost_pointer": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "retirement_condition": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "action": {
-      "type": "object",
-      "required": [
-        "repository",
-        "workflow_class",
-        "evidence_class",
-        "status"
-      ],
-      "properties": {
-        "repository": {
-          "type": "string"
-        },
-        "workflow_class": {
-          "type": "string"
-        },
-        "evidence_class": {
-          "$ref": "#/$defs/evidence"
-        },
-        "status": {
-          "type": "string"
-        },
-        "source": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "note": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "run_count": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "estimated_minutes": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "window_days": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "success_count": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "failure_count": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "cancelled_count": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        }
-      }
+      "items": { "type": "string" }
     }
   }
 }

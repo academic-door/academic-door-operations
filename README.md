@@ -1,112 +1,69 @@
 # Academic Door Operations
 
-Private Parent-held operations / FinOps observability for the entire Academic Door project.
+Public-safe Operations observability executor for Academic Door.
 
-Canonical authority: `academic-door/academic-door-main-control`
-- checkpoint: `academic-door/academic-door-main-control#65`
-- policy: `governance/OPERATIONS_OBSERVATORY.md`
+Canonical authority remains in Academic Door's private governance surface. This public repository intentionally does not publish private governance repository names, private issue/PR pointers, or private evidence payloads.
 
-Owner: `① Academic Door | 总控`
+Owner: Academic Door Parent governance.
 
-## Scope
+## Public-safe contract
 
-This repository is **Academic Door-wide and topology-dynamic**. It tracks material operating cost, resource usage, quota/rate pressure, credential metadata, infrastructure/services, GitHub Actions efficiency, and Human Principal attention requirements across all current and future Academic Door products, channels, runtimes, providers, APIs, and shared capabilities.
+This repository is intentionally public. It may execute read-only collection and publish a **sanitized aggregate** only.
 
-Current numbered Brains/repositories are only the present inventory. They do not define the scope.
+The persistent public output surface MUST NOT contain:
 
-## Hard boundaries
+- discovered credential inventory or logical names from other systems;
+- private repository identifiers;
+- private issue / pull-request pointers;
+- Human account facts;
+- payment-method, invoice, or private provider-account detail;
+- raw private owner telemetry;
+- secret values, authorization headers, cookies, private keys, passwords, or tokenized URLs.
 
-- Read-only observability; not a product control plane.
-- Never store secret values, authorization headers, cookies, private keys, mailbox passwords, or tokenized URLs.
-- Product/runtime systems must not depend on this repository to operate.
-- Raw/high-cardinality owner telemetry remains in the owning repository/runtime; this repo stores bounded normalized summaries and evidence pointers.
-- Unknown billing/quota facts stay `UNKNOWN`; they are never silently treated as zero.
+Raw GitHub/account evidence may exist only transiently inside the GitHub Actions runner workspace and is never uploaded as an artifact.
 
-## Evidence classes
+Source systems remain authoritative: provider accounts, product owner runtimes, and private canonical governance. This public repository is not a secret manager, account ledger, scheduler, broker, queue, cache, or product control plane.
 
-- `ACTUAL`: authoritative billed amount or metered usage.
-- `PROVIDER_REPORTED`: provider-reported quota/rate/remaining/reset state.
-- `ESTIMATED`: derived from repository/runtime evidence when authoritative billing is unavailable.
-- `UNKNOWN`: not currently observable.
+## Public persistent outputs
 
-## Phase 0
+The scheduled workflow publishes only:
 
-Tracked by #1 and accepted on main. `data/seed-snapshot.json` is the bounded initial inventory baseline. `scripts/render_report.py` renders a human-readable private report.
+- `public/latest.json` — strict allowlisted public snapshot;
+- `public/latest.md` — human-readable public-safe report;
+- `public/manifest.json` — hashes and file allowlist for the public artifact.
 
-## Phase 1 — automated read-only ingestion
+Artifact retention is seven days.
 
-Tracked by #3. GitHub-wide observation is active:
+The report currently exposes only deliberately public-safe facts such as:
 
-- discover repositories from the Academic Door GitHub App installation rather than hard-coding today's product list;
-- summarize recent Actions workflow activity as `ESTIMATED` operational evidence;
-- read organization billing usage as `ACTUAL` only when GitHub exposes it through the authorized billing endpoint;
-- inventory GitHub Actions secret **metadata only** (logical names, timestamps, visibility/scope), never secret values;
-- merge the observed evidence into `data/latest.json` and render `reports/latest.md`.
+- coarse GitHub Actions billable state (`ZERO / POSITIVE / UNKNOWN`);
+- public owner-provider health and public estimated DeepSeek cost;
+- coarse service lifecycle;
+- aggregate public-vs-private Actions workload pressure without private repository names;
+- generic material alerts and human-action classes.
 
-The first live manual probe was accepted on 2026-09-16: workflow run `35131360875` completed successfully on `main`, including App-token minting, Academic Door-wide collection, normalized snapshot validation, report rendering, and bounded artifact upload. One bounded daily read-only run is now enabled, with private artifacts retained for 30 days. The workflow remains manually dispatchable as well.
+## Transient collection
 
-### Bounded owner telemetry feeders
+The scheduled workflow writes raw collector outputs under `$RUNNER_TEMP/academic-door-operations`.
 
-Phase 1 also ingests selected public owner/runtime evidence through `scripts/collect_owner_telemetry.py`. The collector uses fixed Academic Door URLs and explicit field whitelists; raw owner payloads are not persisted into Operations artifacts.
+The GitHub collector may transiently see repository identifiers and organization billing details needed to compute aggregates. Those inputs are not persisted in this repository or its workflow artifact.
 
-Initial feeders:
+The owner-telemetry collector reads bounded public Academic Door evidence and may normalize fields that are later discarded by the public snapshot builder. Only the strict public schema may cross the persistence boundary.
 
-- Daily Door `data/metadata_provider_health.json` → Semantic Scholar / Elsevier / Crossref / OpenAlex pressure summary;
-- Daily Door `data/semantic_scholar_usage.json` → legitimate provider usage and credential-health evidence;
-- Daily Door `data/ai_cost_usage.json` → current-month and rolling-30d DeepSeek **estimated** cost/usage;
-- Journals production `data` branch `public/api/v1/monitoring.json` → bounded production monitor health summary.
+## GitHub App
 
-These sources are public owner evidence, so this slice does **not** expand the Operations GitHub App to `Contents: Read`. Future private owner telemetry must use a separately reviewed least-privilege route rather than silently broadening the App.
+The workflow mints a short-lived read-only GitHub App installation token using one repository variable and one repository secret referenced by the workflow. Their values are never emitted.
 
-Synthetic Semantic Scholar keep-alive evidence is never accepted as credential health. If owner telemetry still exposes that path, Operations records it only as an owner-local reconciliation pointer to `econ-paper-monitor#208`; legitimate product usage remains the credential-use evidence.
+The public-safe implementation no longer calls GitHub Actions secret-metadata endpoints. A later separately approved account-permission step may remove now-unneeded secret-metadata read permissions from the GitHub App after production acceptance.
 
-### Academic Door Operations GitHub App — minimum permission contract
+## Lifecycle example
 
-Install the App only on the `academic-door` organization and select **All repositories** so future Academic Door repositories enter scope automatically.
+Jina may be represented publicly as:
 
-Repository permissions:
+`RETIRING / RETIRE_BY_DEFAULT_PENDING_DAILY_PROVENANCE_GATE`
 
-- **Metadata: Read** (baseline GitHub App repository metadata access)
-- **Actions: Read**
-- **Secrets: Read** — metadata only; GitHub's list/get secret endpoints do not reveal encrypted values
+The public report does not publish private account context, credential metadata, or private owner pointers supporting that lifecycle decision.
 
-Organization permissions:
+## Development boundary
 
-- **Administration: Read** — required for organization billing usage endpoints
-- **Secrets: Read** — organization Actions secret metadata only
-
-No repository or organization write permission belongs in this App. `Contents: Read` is intentionally not requested by the current implementation.
-
-The workflow expects:
-
-- repository variable `OPS_APP_CLIENT_ID`;
-- repository secret `OPS_APP_PRIVATE_KEY`.
-
-`actions/create-github-app-token@v3` uses those to mint a short-lived installation token. Cross-repository GitHub metadata reads use that token; report generation itself does not grant the App any write path.
-
-### Activation state
-
-1. GitHub collector/probe implementation merged with CI green. ✅
-2. Human Principal created and installed the least-privilege App and configured the variable/secret. ✅
-3. Live manual probe run `35131360875` succeeded. ✅
-4. Bounded artifacts and account-level GitHub billing permission were verified. ✅
-5. Daily read-only report schedule with 30-day artifact retention is active. ✅
-6. Public owner-telemetry ingestion is the current Phase-1 expansion slice.
-
-Account-level GitHub Actions billing is observable as `ACTUAL` when the billing API responds successfully; `UNKNOWN` remains mandatory for any unavailable provider/account surface.
-
-## Phase 2b — cost coverage ledger
-
-Tracked by #11 under the Parent decision in `academic-door-main-control#65`.
-
-The normalized `costs` array is the single bounded cost-coverage ledger. Each row carries:
-- evidence class and coverage status;
-- current amount/usage/plan or included-quota facts when supported;
-- immutable evidence observation time;
-- durable source pointer;
-- an explicit `next_evidence_route`;
-- whether a Human Principal action is currently required.
-
-The report separates ACTUAL billed subtotal, ESTIMATED usage cost, provider-reported free/quota surfaces, and named account-billing UNKNOWN residuals. An authorized paid budget of zero is governance metadata only and is never converted into billed spend zero without provider/account evidence.
-
-Current account routes remain read-only. New provider account permissions/tokens/connectors, payment methods, plan changes, credential rotation, secret/session extraction, or product-runtime coupling return to ① before acquisition.
+This repository can be public without making Academic Door private operational evidence public. Any future field added to the persistent snapshot must pass the strict allowlist validator and public-safety negative tests before merge.
