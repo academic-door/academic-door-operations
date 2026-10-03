@@ -20,17 +20,19 @@ class PublicSnapshotContractTests(unittest.TestCase):
     def test_scope_is_explicitly_public_safe(self):
         self.assertEqual(self.snapshot["scope"], "ACADEMIC_DOOR_PUBLIC_SAFE")
 
-    def test_jina_keeps_lifecycle_without_private_account_context(self):
+    def test_jina_retirement_is_public_safe_after_daily_acceptance(self):
         jina = next(item for item in self.snapshot["services"] if item["id"] == "jina-reader")
-        self.assertEqual(jina["lifecycle_state"], "RETIRING")
+        self.assertEqual(jina["lifecycle_state"], "RETIRED_PENDING_ACCOUNT_CLEANUP")
         self.assertEqual(
             jina["usefulness_status"],
-            "RETIRE_BY_DEFAULT_PENDING_DAILY_PROVENANCE_GATE",
+            "RETIRED_NO_UNIQUE_CURRENT_VALUE",
         )
+        self.assertIn("Daily runtime retired", jina["status"])
         serialized = json.dumps(self.snapshot).lower()
         self.assertNotIn("human principal", serialized)
         self.assertNotIn("no payment", serialized)
         self.assertNotIn("jina_api_key", serialized)
+        self.assertNotIn("credential", serialized)
 
     def test_report_is_deterministic_and_public_safe(self):
         first = render(self.snapshot)
