@@ -23,10 +23,7 @@ class PublicSnapshotContractTests(unittest.TestCase):
     def test_jina_retirement_is_public_safe_after_daily_acceptance(self):
         jina = next(item for item in self.snapshot["services"] if item["id"] == "jina-reader")
         self.assertEqual(jina["lifecycle_state"], "RETIRED_PENDING_ACCOUNT_CLEANUP")
-        self.assertEqual(
-            jina["usefulness_status"],
-            "RETIRED_NO_UNIQUE_CURRENT_VALUE",
-        )
+        self.assertEqual(jina["usefulness_status"], "RETIRED")
         self.assertIn("Daily runtime retired", jina["status"])
         serialized = json.dumps(self.snapshot).lower()
         self.assertNotIn("human principal", serialized)
