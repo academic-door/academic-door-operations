@@ -15,7 +15,7 @@
       "id": "jina-reader",
       "owner": "daily-door",
       "lifecycle_state": "RETIRED_PENDING_ACCOUNT_CLEANUP",
-      "usefulness_status": "RETIRED_NO_UNIQUE_CURRENT_VALUE",
+      "usefulness_status": "RETIRED",
       "status": "Daily runtime retired after production-accepted provenance qualification",
       "last_success_at": null,
       "last_failure_at": null
