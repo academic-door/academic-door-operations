@@ -14,9 +14,9 @@
     {
       "id": "jina-reader",
       "owner": "daily-door",
-      "lifecycle_state": "RETIRING",
-      "usefulness_status": "RETIRE_BY_DEFAULT_PENDING_DAILY_PROVENANCE_GATE",
-      "status": "staged retirement; bounded provenance gate pending",
+      "lifecycle_state": "RETIRED_PENDING_ACCOUNT_CLEANUP",
+      "usefulness_status": "RETIRED_NO_UNIQUE_CURRENT_VALUE",
+      "status": "Daily runtime retired after production-accepted provenance qualification",
       "last_success_at": null,
       "last_failure_at": null
     },
