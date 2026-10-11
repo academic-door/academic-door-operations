@@ -56,6 +56,9 @@ jobs:
       - name: Build public artifact manifest
         run: python scripts/build_public_manifest.py --directory public --output public/manifest.json
 
+      - name: Publish validated public-safe report to Actions run summary
+        run: cat public/latest.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload public-safe report artifacts
         uses: actions/upload-artifact@v4
         with:
