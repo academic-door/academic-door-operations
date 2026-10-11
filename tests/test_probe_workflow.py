@@ -18,6 +18,21 @@ class ProbeWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("git push", text)
         self.assertNotIn("contents: write", text)
 
+    def test_run_summary_uses_only_validated_public_report(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        validate = text.index("name: Validate public-safe snapshot")
+        render = text.index("name: Render public-safe report")
+        summary = text.index("name: Publish validated public-safe report to Actions run summary")
+        artifact = text.index("name: Upload public-safe report artifacts")
+        self.assertLess(validate, render)
+        self.assertLess(render, summary)
+        self.assertLess(summary, artifact)
+        self.assertIn('cat public/latest.md >> "$GITHUB_STEP_SUMMARY"', text)
+        summary_step = text[summary:artifact]
+        self.assertNotIn("$RUNNER_TEMP", summary_step)
+        self.assertNotIn("github.json", summary_step)
+        self.assertNotIn("owner.json", summary_step)
+
     def test_raw_evidence_is_transient_and_artifact_is_strictly_public_safe(self):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("$RUNNER_TEMP/academic-door-operations/github.json", text)
