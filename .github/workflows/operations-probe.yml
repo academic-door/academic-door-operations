@@ -53,6 +53,9 @@ jobs:
       - name: Render public-safe report
         run: python scripts/render_report.py public/latest.json public/latest.md
 
+      - name: Render standalone public-safe dashboard
+        run: python -m scripts.render_dashboard public/latest.json public/index.html
+
       - name: Build public artifact manifest
         run: python scripts/build_public_manifest.py --directory public --output public/manifest.json
 
@@ -68,4 +71,5 @@ jobs:
           path: |
             public/latest.json
             public/latest.md
+            public/index.html
             public/manifest.json

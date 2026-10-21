@@ -7,15 +7,16 @@ from scripts.build_public_manifest import build_manifest
 
 
 class PublicManifestTests(unittest.TestCase):
-    def test_manifest_allows_only_latest_json_and_markdown(self):
+    def test_manifest_allows_only_public_json_markdown_and_dashboard(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "latest.json").write_text("{}", encoding="utf-8")
             (root / "latest.md").write_text("# ok", encoding="utf-8")
+            (root / "index.html").write_text("<html>ok</html>", encoding="utf-8")
             manifest = build_manifest(root)
             self.assertEqual(
                 [item["name"] for item in manifest["files"]],
-                ["latest.json", "latest.md"],
+                ["latest.json", "latest.md", "index.html"],
             )
             self.assertNotIn("github", json.dumps(manifest).lower())
             self.assertNotIn("owner", json.dumps(manifest).lower())

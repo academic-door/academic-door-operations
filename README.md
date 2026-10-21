@@ -26,10 +26,11 @@ Source systems remain authoritative: provider accounts, product owner runtimes, 
 
 ## Public persistent outputs
 
-The scheduled workflow publishes only:
+The scheduled workflow publishes only the validated allowlisted files:
 
 - `public/latest.json` — strict allowlisted public snapshot;
 - `public/latest.md` — human-readable public-safe report;
+- `public/index.html` — self-contained, no-network public-safe HTML dashboard (downloadable from the existing run artifact, not a new hosted/private site);
 - `public/manifest.json` — hashes and file allowlist for the public artifact.
 
 Artifact retention is seven days.

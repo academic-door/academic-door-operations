@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 
-ALLOWED_INPUTS = ("latest.json", "latest.md")
+ALLOWED_INPUTS = ("latest.json", "latest.md", "index.html")
 
 
 def build_manifest(directory: Path) -> dict:
