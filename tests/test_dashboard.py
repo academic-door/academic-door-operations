@@ -26,7 +26,7 @@ class DashboardContractTests(unittest.TestCase):
 
     def test_untrusted_public_text_is_html_escaped(self):
         snapshot = copy.deepcopy(SEED)
-        snapshot["services"][0]["status"] = "<script>alert(1)</script>"
+        snapshot["services"][0]["id"] = "<script>alert(1)</script>"
         self.assertEqual(validate(snapshot), [])
         markup = render(snapshot)
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", markup)
