@@ -15,10 +15,13 @@ class DashboardContractTests(unittest.TestCase):
     def test_seed_renders_offline_standalone_dashboard(self):
         markup = render(SEED)
         self.assertIn("<!doctype html>", markup)
-        self.assertIn("Cost &amp; quota overview", markup)
-        self.assertIn("Project-wide total", markup)
-        self.assertIn("NOT AVAILABLE", markup)
-        self.assertIn("GitHub Actions scarcity", markup)
+        self.assertIn("成本与额度总览", markup)
+        self.assertIn('lang="zh-CN"', markup)
+        self.assertIn("项目费用总计", markup)
+        self.assertIn("估算运行分钟", markup)
+        self.assertIn("账单覆盖情况", markup)
+        self.assertIn("暂无法计算", markup)
+        self.assertIn("GitHub Actions 资源占用", markup)
         self.assertNotIn("<script", markup)
         self.assertNotIn("<link ", markup)
         self.assertNotIn("https://", markup)
@@ -46,7 +49,8 @@ class DashboardContractTests(unittest.TestCase):
         }]
         markup = render(snapshot)
         self.assertIn("$0.1200", markup)
-        self.assertIn("UNKNOWN in this public snapshot", markup)
+        self.assertIn("估算（ESTIMATED）", markup)
+        self.assertIn("当前公开快照暂无权威数据（UNKNOWN）", markup)
         self.assertNotIn("Total cost $0.1200", markup)
 
 
