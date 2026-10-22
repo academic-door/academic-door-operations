@@ -40,12 +40,22 @@ LABELS = {
     "PRIVATE_INCLUDED_MINUTES": "私有仓库·有限赠送分钟",
     "daily-door": "每日之门",
     "journal-system": "期刊体系",
+    "jina-reader": "Jina 阅读器",
+    "deepseek-inference": "DeepSeek 推理服务",
+    "semantic-scholar": "Semantic Scholar",
+    "elsevier-metadata": "Elsevier 元数据",
+    "crossref": "Crossref",
+    "openalex": "OpenAlex",
+    "journals-production-monitor": "期刊体系生产监测",
+    "GITHUB_ACTIONS_POSITIVE_BILLABLE_NET": "GitHub Actions 本期计费为正",
+    "PARENT_REVIEW": "需总控复核",
+    "GitHub Actions current-period billable net is positive.": "GitHub Actions 本期净计费金额为正，需复核。",
 }
 
 
 def display(value: object) -> str:
     """HTML-escape public fields after translating known enum labels."""
-    return esc(LABELS.get(str(value), value))
+    return esc(LABELS.get("UNKNOWN" if value is None else str(value), "UNKNOWN" if value is None else value))
 
 
 def esc(value: object) -> str:
@@ -127,7 +137,7 @@ def render(snapshot: dict) -> str:
         for item in snapshot["provider_health"]
     )
     if not provider_rows:
-        provider_rows = '<tr><td colspan="7">No observed provider health</td></tr>'
+        provider_rows = '<tr><td colspan="7">暂无供应商健康观测数据</td></tr>'
 
     actions_table = table(
         ["资源类别", "仓库数", "工作流数", "运行次数", "失败次数", "估算运行分钟"],
@@ -142,7 +152,7 @@ def render(snapshot: dict) -> str:
          for item in costs],
     )
     service_rows = table(
-        ["服务", "所属产品", "生命周期", "近 success"],
+        ["服务", "所属产品", "生命周期", "最近成功时间"],
         [[item["id"], item["owner"], item["lifecycle_state"], item["last_success_at"]]
          for item in snapshot["services"]],
     )
@@ -156,7 +166,7 @@ def render(snapshot: dict) -> str:
         panel("费用观测记录", cost_table,
               "来自业务方的费用估算不等于供应商账单；这里只覆盖已列出的服务。")
         + panel("账单覆盖情况", '<div class="coverage">'
-                '<div><strong>GitHub Actions</strong><span>' + esc(billed_label) + ' · ' + esc(bills["evidence_class"]) + '</span></div>'
+                '<div><strong>GitHub Actions</strong><span>' + display(billed_label) + ' · ' + display(bills["evidence_class"]) + '</span></div>'
                 '<div><strong>其他平台账单</strong><span>当前公开快照暂无权威数据（UNKNOWN）</span></div>'
                 '<div><strong>项目费用总计</strong><span>暂无法计算：账单覆盖不完整</span></div>'
                 '<div><strong>供应商额度与重置时间</strong><span>尚无已验证的额度和重置数据</span></div>'
@@ -212,7 +222,7 @@ footer {font-size:12px;color:var(--muted);padding-top:23px}
 <header><div class="eyebrow">Academic Door / 运营观测</div>
 <h1>成本与额度总览</h1>
 <p>只读、公开安全的运行快照；不包含私有账号账本，也不能代表项目完整成本。</p>
-<p class="stamp">数据观测时间：""" + esc(observed_at) + """ UTC when timestamp is Z · 证据类型: live scheduled collector output</p></header>
+<p class="stamp">数据观测时间：""" + esc(observed_at) + """  · 来源：每日定时采集（时区见时间戳）</p></header>
 <div class="grid">""" + (
         metric("Actions 实际计费状态", billed_label, LABELS.get(bills["evidence_class"], bills["evidence_class"]) + " · 仅为状态，不是具体金额")
         + metric("DeepSeek 本月费用", ai_amount, "业务方计量估算（非账单）")
