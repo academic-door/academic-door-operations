@@ -73,3 +73,25 @@ jobs:
             public/latest.md
             public/index.html
             public/manifest.json
+
+      - name: Upload verified public dashboard for GitHub Pages (opt-in)
+        if: vars.OPS_PAGES_PUBLISH_ENABLED == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+  deploy-pages:
+    name: Publish public-safe Operations dashboard (opt-in)
+    if: vars.OPS_PAGES_PUBLISH_ENABLED == 'true'
+    needs: probe
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy verified public-safe artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
