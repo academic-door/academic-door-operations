@@ -68,3 +68,24 @@ The public report does not publish private account context, credential metadata,
 ## Development boundary
 
 This repository can be public without making Academic Door private operational evidence public. Any future field added to the persistent snapshot must pass the strict allowlist validator and public-safety negative tests before merge.
+
+## Optional fixed URL for the public-safe dashboard (not yet enabled)
+
+An **opt-in** Pages deployment is staged behind repository variable
+`OPS_PAGES_PUBLISH_ENABLED == 'true'`. In its default unset state, the
+existing daily public-safe artifact behavior is unchanged.
+
+Only after the Parent/Human hosting and Pages permission checkpoint:
+1. Configure this public repository's GitHub Pages source as **GitHub Actions** and
+   review the resulting public URL and deployment environment access policy.
+2. Enable the variable; the next natural scheduled report will upload the
+   already validated `public/` allowlist as the Pages artifact.
+3. The isolated deploy job uses `pages: write` and `id-token: write`, while
+   the probe/collector remains `contents: read` without write access.
+4. Verify the actual Pages site, data timestamp, daily update, and absence
+   of any unallowlisted account/owner payload before treating the public
+   hosted surface as accepted.
+
+This would publish **public-safe aggregate information only**, not an
+authenticated private Operations console or a complete billed-cost ledger.
+Do not turn it on before the actual placement/security checkpoint.
